@@ -22,6 +22,7 @@ package org.apache.maven.plugin.surefire.booterclient.output;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.NotifiableTestStream;
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactory;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
 import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.apache.maven.surefire.report.ConsoleOutputReceiver;
 import org.apache.maven.surefire.report.ReportEntry;
@@ -74,7 +75,7 @@ public class ForkClient
 
     /**
      * <em>testSetStartedAt</em> is set to non-zero after received
-     * {@link org.apache.maven.surefire.booter.ForkedChannelEncoder#testSetStarting(ReportEntry, boolean)}.
+     * {@link MasterProcessChannelEncoder#testSetStarting(ReportEntry, boolean)}.
      */
     private final AtomicLong testSetStartedAt = new AtomicLong( START_TIME_ZERO );
 

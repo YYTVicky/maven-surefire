@@ -19,10 +19,13 @@ package org.apache.maven.surefire.extensions.util;
  * under the License.
  */
 
+import org.apache.maven.surefire.booter.Command;
+import org.apache.maven.surefire.booter.MasterProcessCommand;
+import org.apache.maven.surefire.extensions.CloseableDaemonThread;
+import org.apache.maven.surefire.extensions.CommandReader;
+
 import javax.annotation.Nonnull;
-import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonWritableChannelException;
@@ -31,33 +34,35 @@ import java.nio.channels.WritableByteChannel;
 /**
  *
  */
-public class StreamFeeder extends Thread implements Closeable
+public class StreamFeeder extends CloseableDaemonThread
 {
     private final WritableByteChannel channel;
-    private final InputStream is;
+    private final CommandReader commandReader;
 
     private volatile boolean disabled;
     private volatile Throwable exception;
 
-    public StreamFeeder( @Nonnull String threadName, @Nonnull WritableByteChannel channel, @Nonnull InputStream is )
+    public StreamFeeder( @Nonnull String threadName, @Nonnull WritableByteChannel channel,
+                         @Nonnull CommandReader commandReader )
     {
-        setName( threadName );
-        setDaemon( true );
+        super( threadName );
         this.channel = channel;
-        this.is = is;
+        this.commandReader = commandReader;
     }
 
     @Override
+    @SuppressWarnings( "checkstyle:innerassignment" )
     public void run()
     {
         try ( WritableByteChannel c = channel )
         {
-            for ( int data = is.read(); data != -1; data = is.read()  )
+            for ( Command cmd; ( cmd = commandReader.readNextCommand() ) != null; )
             {
                 if ( !disabled )
                 {
-                    // todo use CommandReader interface instead of InputStream. Then we would write ByteBuffer.
-                    c.write( ByteBuffer.wrap( new byte[] {(byte) data} ) );
+                    MasterProcessCommand cmdType = cmd.getCommandType();
+                    byte[] data = cmdType.hasDataType() ? cmdType.encode( cmd.getData() ) : cmdType.encode();
+                    c.write( ByteBuffer.wrap( data ) );
                 }
             }
         }

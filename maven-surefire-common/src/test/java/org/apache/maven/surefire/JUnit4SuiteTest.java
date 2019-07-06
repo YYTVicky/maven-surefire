@@ -28,7 +28,6 @@ import org.apache.maven.plugin.surefire.AbstractSurefireMojoTest;
 import org.apache.maven.plugin.surefire.CommonReflectorTest;
 import org.apache.maven.plugin.surefire.MojoMocklessTest;
 import org.apache.maven.plugin.surefire.SurefireHelperTest;
-import org.apache.maven.plugin.surefire.SurefireReflectorTest;
 import org.apache.maven.plugin.surefire.SurefirePropertiesTest;
 import org.apache.maven.plugin.surefire.booterclient.BooterDeserializerProviderConfigurationTest;
 import org.apache.maven.plugin.surefire.booterclient.BooterDeserializerStartupConfigurationTest;
@@ -52,6 +51,7 @@ import org.apache.maven.plugin.surefire.util.DirectoryScannerTest;
 import org.apache.maven.plugin.surefire.util.ScannerUtilTest;
 import org.apache.maven.plugin.surefire.util.SpecificFileFilterTest;
 import org.apache.maven.surefire.extensions.ConsoleOutputReporterTest;
+import org.apache.maven.surefire.extensions.ForkChannelTest;
 import org.apache.maven.surefire.extensions.StatelessReporterTest;
 import org.apache.maven.surefire.extensions.StatelessTestsetInfoReporterTest;
 import org.apache.maven.surefire.report.FileReporterTest;
@@ -89,7 +89,6 @@ public class JUnit4SuiteTest extends TestCase
         suite.addTest( new JUnit4TestAdapter( TestProvidingInputStreamTest.class ) );
         suite.addTest( new JUnit4TestAdapter( TestLessInputStreamBuilderTest.class ) );
         suite.addTest( new JUnit4TestAdapter( SPITest.class ) );
-        suite.addTest( new JUnit4TestAdapter( SurefireReflectorTest.class ) );
         suite.addTest( new JUnit4TestAdapter( SurefireHelperTest.class ) );
         suite.addTest( new JUnit4TestAdapter( AbstractSurefireMojoTest.class ) );
         suite.addTest( new JUnit4TestAdapter( DefaultForkConfigurationTest.class ) );
@@ -106,6 +105,7 @@ public class JUnit4SuiteTest extends TestCase
         suite.addTest( new JUnit4TestAdapter( StatelessTestsetInfoReporterTest.class ) );
         suite.addTest( new JUnit4TestAdapter( CommonReflectorTest.class ) );
         suite.addTest( new JUnit4TestAdapter( ForkStarterTest.class ) );
+        suite.addTest( new JUnit4TestAdapter( ForkChannelTest.class ) );
         return suite;
     }
 }

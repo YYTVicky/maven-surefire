@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.suite.RunResult;
 
 import java.io.File;
@@ -383,6 +384,9 @@ public class IntegrationTestMojo
      */
     @Parameter( property = "failsafe.useModulePath", defaultValue = "true" )
     private boolean useModulePath;
+
+    @Parameter( property = "failsafe.forkNode" )
+    private ForkNodeFactory forkNode;
 
     /**
      * You can selectively exclude individual environment variables by enumerating their keys.
@@ -909,6 +913,12 @@ public class IntegrationTestMojo
     protected final boolean hasSuiteXmlFiles()
     {
         return suiteXmlFiles != null && suiteXmlFiles.length != 0;
+    }
+
+    @Override
+    protected final ForkNodeFactory getForkNode()
+    {
+        return forkNode;
     }
 
     @Override

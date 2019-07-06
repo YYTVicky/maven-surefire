@@ -19,10 +19,10 @@ package org.apache.maven.surefire.extensions.util;
  * under the License.
  */
 
+import org.apache.maven.surefire.extensions.CloseableDaemonThread;
 import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -31,7 +31,7 @@ import java.util.Scanner;
 /**
  *
  */
-public final class LineConsumerThread extends Thread implements Closeable
+public final class LineConsumerThread extends CloseableDaemonThread
 {
     private final Charset encoding;
     private final ReadableByteChannel channel;
@@ -50,8 +50,7 @@ public final class LineConsumerThread extends Thread implements Closeable
                                @Nonnull ReadableByteChannel channel, @Nonnull StreamConsumer consumer,
                                @Nonnull CountdownCloseable countdownCloseable, @Nonnull Charset encoding )
     {
-        setName( threadName );
-        setDaemon( true );
+        super( threadName );
         this.channel = channel;
         this.consumer = consumer;
         this.countdownCloseable = countdownCloseable;

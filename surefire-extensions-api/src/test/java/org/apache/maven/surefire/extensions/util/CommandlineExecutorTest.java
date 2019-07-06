@@ -19,6 +19,8 @@ package org.apache.maven.surefire.extensions.util;
  * under the License.
  */
 
+import org.apache.maven.surefire.booter.Command;
+import org.apache.maven.surefire.extensions.CommandReader;
 import org.apache.maven.surefire.shared.utils.cli.Commandline;
 import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.junit.After;
@@ -26,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.Closeable;
-import java.io.InputStream;
 import java.nio.file.Paths;
 
 import static org.apache.maven.surefire.shared.lang3.SystemUtils.IS_OS_WINDOWS;
@@ -90,15 +91,33 @@ public class CommandlineExecutorTest
         exec = new CommandlineExecutor( cli, countdownCloseable );
         streams = exec.execute();
         StreamConsumer consumer = mock( StreamConsumer.class );
-        InputStream is = new InputStream()
+        CommandReader commandReader = new CommandReader()
         {
             @Override
-            public int read()
+            public Command readNextCommand()
             {
-                return -1;
+                return null;
+            }
+
+            @Override
+            public void close()
+            {
+
+            }
+
+            @Override
+            public boolean isClosed()
+            {
+                return false;
+            }
+
+            @Override
+            public void tryFlush()
+            {
+
             }
         };
-        StreamFeeder in = new StreamFeeder( "std-in-fork-1", streams.getStdInChannel(), is );
+        StreamFeeder in = new StreamFeeder( "std-in-fork-1", streams.getStdInChannel(), commandReader );
         in.start();
         out = new LineConsumerThread( "std-out-fork-1", streams.getStdOutChannel(), consumer, countdownCloseable );
         out.start();

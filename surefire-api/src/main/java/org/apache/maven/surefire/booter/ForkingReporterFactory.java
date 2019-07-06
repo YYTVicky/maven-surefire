@@ -19,6 +19,7 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
+import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
 import org.apache.maven.surefire.report.ReporterFactory;
 import org.apache.maven.surefire.report.RunListener;
 import org.apache.maven.surefire.suite.RunResult;
@@ -34,9 +35,9 @@ public class ForkingReporterFactory
 {
     private final boolean trimstackTrace;
 
-    private final ForkedChannelEncoder eventChannel;
+    private final MasterProcessChannelEncoder eventChannel;
 
-    public ForkingReporterFactory( boolean trimstackTrace, ForkedChannelEncoder eventChannel )
+    public ForkingReporterFactory( boolean trimstackTrace, MasterProcessChannelEncoder eventChannel )
     {
         this.trimstackTrace = trimstackTrace;
         this.eventChannel = eventChannel;

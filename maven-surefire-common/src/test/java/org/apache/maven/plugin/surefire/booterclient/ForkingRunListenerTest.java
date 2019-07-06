@@ -25,7 +25,7 @@ import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.Notifiable
 import org.apache.maven.plugin.surefire.booterclient.output.ForkClient;
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.plugin.surefire.log.api.NullConsoleLogger;
-import org.apache.maven.surefire.booter.ForkedChannelEncoder;
+import org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder;
 import org.apache.maven.surefire.booter.ForkingRunListener;
 import org.apache.maven.surefire.report.CategorizedReportEntry;
 import org.apache.maven.surefire.report.ConsoleOutputReceiver;
@@ -196,8 +196,8 @@ public class ForkingRunListenerTest
         ForkClient forkStreamClient =
                 new ForkClient( providerReporterFactory, new MockNotifiableTestStream(), log, new AtomicBoolean(), 1 );
 
-        forkStreamClient.consumeMultiLineContent( ":maven:surefire:std:out:sys-prop:normal-run:UTF-8:azE=:djE="
-                + "\n:maven:surefire:std:out:sys-prop:normal-run:UTF-8:azI=:djI=" );
+        forkStreamClient.consumeMultiLineContent( ":maven-surefire-event:sys-prop:normal-run:UTF-8:azE=:djE="
+                + "\n:maven-surefire-event:sys-prop:normal-run:UTF-8:azI=:djI=" );
 
         MatcherAssert.assertThat( forkStreamClient.getTestVmSystemProperties().size(), is( 2 ) );
     }
@@ -239,10 +239,10 @@ public class ForkingRunListenerTest
         ReportEntry expected = createDefaultReportEntry();
         final SimpleReportEntry secondExpected = createAnotherDefaultReportEntry();
 
-        new ForkingRunListener( new ForkedChannelEncoder( printStream ), false )
+        new ForkingRunListener( new LegacyMasterProcessChannelEncoder( printStream ), false )
                 .testStarting( expected );
 
-        new ForkingRunListener( new ForkedChannelEncoder( anotherPrintStream ), false )
+        new ForkingRunListener( new LegacyMasterProcessChannelEncoder( anotherPrintStream ), false )
                 .testSkipped( secondExpected );
 
         TestSetMockReporterFactory providerReporterFactory = new TestSetMockReporterFactory();
@@ -312,7 +312,7 @@ public class ForkingRunListenerTest
 
     private RunListener createForkingRunListener()
     {
-        return new ForkingRunListener( new ForkedChannelEncoder( printStream ), false );
+        return new ForkingRunListener( new LegacyMasterProcessChannelEncoder( printStream ), false );
     }
 
     private class StandardTestRun

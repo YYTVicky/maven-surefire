@@ -29,6 +29,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.suite.RunResult;
 
 import static org.apache.maven.plugin.surefire.SurefireHelper.reportExecution;
@@ -364,6 +365,9 @@ public class SurefirePlugin
      */
     @Parameter( property = "surefire.useModulePath", defaultValue = "true" )
     private boolean useModulePath;
+
+    @Parameter( property = "surefire.forkNode" )
+    private ForkNodeFactory forkNode;
 
     /**
      * You can selectively exclude individual environment variables by enumerating their keys.
@@ -830,5 +834,11 @@ public class SurefirePlugin
     protected final String getEnableProcessChecker()
     {
         return enableProcessChecker;
+    }
+
+    @Override
+    protected final ForkNodeFactory getForkNode()
+    {
+        return forkNode;
     }
 }

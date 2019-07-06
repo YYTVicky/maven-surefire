@@ -20,9 +20,16 @@ package org.apache.maven.surefire.booter;
  */
 
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
+import org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelProcessorFactory;
+import org.apache.maven.surefire.booter.spi.SurefireMasterProcessChannelProcessorFactory;
+import org.apache.maven.surefire.providerapi.CommandListener;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
 import org.apache.maven.surefire.providerapi.ProviderParameters;
 import org.apache.maven.surefire.providerapi.SurefireProvider;
 import org.apache.maven.surefire.report.LegacyPojoStackTraceWriter;
+import org.apache.maven.surefire.report.StackTraceWriter;
+import org.apache.maven.surefire.spi.MasterProcessChannelProcessorFactory;
 import org.apache.maven.surefire.testset.TestSetFailedException;
 
 import java.io.File;
@@ -45,6 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.Math.max;
 import static java.lang.Thread.currentThread;
+import static java.util.ServiceLoader.load;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.maven.surefire.booter.ProcessCheckerType.ALL;
@@ -73,10 +81,11 @@ public final class ForkedBooter
     private static final String LAST_DITCH_SHUTDOWN_THREAD = "surefire-forkedjvm-last-ditch-daemon-shutdown-thread-";
     private static final String PING_THREAD = "surefire-forkedjvm-ping-";
 
-    private final CommandReader commandReader = CommandReader.getReader();
-    private final ForkedChannelEncoder eventChannel = new ForkedChannelEncoder( System.out );
     private final Semaphore exitBarrier = new Semaphore( 0 );
 
+    private volatile MasterProcessChannelEncoder eventChannel;
+    private volatile MasterProcessChannelProcessorFactory channelProcessorFactory;
+    private volatile CommandReader commandReader;
     private volatile long systemExitTimeoutInSeconds = DEFAULT_SYSTEM_EXIT_TIMEOUT_IN_SECONDS;
     private volatile PingScheduler pingScheduler;
 
@@ -106,9 +115,16 @@ public final class ForkedBooter
 
         startupConfiguration = booterDeserializer.getStartupConfiguration();
 
-        forkingReporterFactory = createForkingReporterFactory();
+        String channelConfig = booterDeserializer.getConnectionString();
+        channelProcessorFactory = lookupDecoderFactory( channelConfig );
+        channelProcessorFactory.connect( channelConfig );
+        eventChannel = channelProcessorFactory.createEncoder();
+        MasterProcessChannelDecoder decoder = channelProcessorFactory.createDecoder();
 
+        forkingReporterFactory = createForkingReporterFactory();
         ConsoleLogger logger = (ConsoleLogger) forkingReporterFactory.createReporter();
+        commandReader = new CommandReader( decoder, providerConfiguration.getShutdown(), logger );
+
         pingScheduler = isDebugging() ? null : listenToShutdownCommands( booterDeserializer.getPluginPid(), logger );
 
         systemExitTimeoutInSeconds = providerConfiguration.systemExitTimeout( DEFAULT_SYSTEM_EXIT_TIMEOUT_IN_SECONDS );
@@ -162,7 +178,7 @@ public final class ForkedBooter
         }
         else if ( readTestsFromCommandReader )
         {
-            return new LazyTestsToRun( eventChannel );
+            return new LazyTestsToRun( eventChannel, commandReader );
         }
         return null;
     }
@@ -187,6 +203,21 @@ public final class ForkedBooter
             catch ( AccessControlException e )
             {
                 // ignore
+            }
+        }
+    }
+
+    private void closeForkChannel()
+    {
+        if ( channelProcessorFactory != null )
+        {
+            try
+            {
+                channelProcessorFactory.close();
+            }
+            catch ( IOException e )
+            {
+                e.printStackTrace();
             }
         }
     }
@@ -339,6 +370,7 @@ public final class ForkedBooter
     private void kill( int returnCode )
     {
         commandReader.stop();
+        closeForkChannel();
         Runtime.getRuntime().halt( returnCode );
     }
 
@@ -365,6 +397,7 @@ public final class ForkedBooter
         acquireOnePermit( exitBarrier, timeoutMillis );
         cancelPingScheduler();
         commandReader.stop();
+        closeForkChannel();
         System.exit( 0 );
     }
 
@@ -418,7 +451,9 @@ public final class ForkedBooter
 
     private SurefireProvider createProviderInCurrentClassloader( ForkingReporterFactory reporterManagerFactory )
     {
-        BaseProviderFactory bpf = new BaseProviderFactory( reporterManagerFactory, true );
+        BaseProviderFactory bpf = new BaseProviderFactory( true );
+        bpf.setReporterFactory( reporterManagerFactory );
+        bpf.setCommandReader( commandReader );
         bpf.setTestRequest( providerConfiguration.getTestSuiteDefinition() );
         bpf.setReporterConfiguration( providerConfiguration.getReporterConfiguration() );
         bpf.setForkedChannelEncoder( eventChannel );
@@ -430,10 +465,36 @@ public final class ForkedBooter
         bpf.setDirectoryScannerParameters( providerConfiguration.getDirScannerParams() );
         bpf.setMainCliOptions( providerConfiguration.getMainCliOptions() );
         bpf.setSkipAfterFailureCount( providerConfiguration.getSkipAfterFailureCount() );
-        bpf.setShutdown( providerConfiguration.getShutdown() );
         bpf.setSystemExitTimeout( providerConfiguration.getSystemExitTimeout() );
         String providerClass = startupConfiguration.getActualClassName();
         return (SurefireProvider) instantiateOneArg( classLoader, providerClass, ProviderParameters.class, bpf );
+    }
+
+    private static MasterProcessChannelProcessorFactory lookupDecoderFactory( String channelConfig )
+    {
+        MasterProcessChannelProcessorFactory defaultFactory = null;
+        MasterProcessChannelProcessorFactory customFactory = null;
+        for ( MasterProcessChannelProcessorFactory factory : load( MasterProcessChannelProcessorFactory.class ) )
+        {
+            Class<?> cls = factory.getClass();
+
+            boolean isSurefireFactory =
+                cls == LegacyMasterProcessChannelProcessorFactory.class
+                    || cls == SurefireMasterProcessChannelProcessorFactory.class;
+
+            if ( isSurefireFactory )
+            {
+                if ( factory.canUse( channelConfig ) )
+                {
+                    defaultFactory = factory;
+                }
+            }
+            else
+            {
+                customFactory = factory;
+            }
+        }
+        return customFactory != null ? customFactory : defaultFactory;
     }
 
     /**
@@ -465,6 +526,11 @@ public final class ForkedBooter
         {
             DumpErrorSingleton.getSingleton().dumpException( t );
             t.printStackTrace();
+            if ( booter.eventChannel != null )
+            {
+                StackTraceWriter stack = new LegacyPojoStackTraceWriter( "test subsystem", "no method", t );
+                booter.eventChannel.consoleErrorLog( stack, false );
+            }
             booter.cancelPingScheduler();
             booter.exit1();
         }

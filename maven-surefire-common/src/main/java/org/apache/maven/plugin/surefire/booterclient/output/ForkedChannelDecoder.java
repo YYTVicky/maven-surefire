@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.MAGIC_NUMBER;
+import static org.apache.maven.surefire.booter.ForkedProcessEvent.MAGIC_NUMBER_DELIMITED;
 import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDERR;
 import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDERR_NEW_LINE;
 import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDOUT;
@@ -182,13 +182,13 @@ public final class ForkedChannelDecoder
 
     public void handleEvent( String line, ForkedChannelDecoderErrorHandler errorHandler )
     {
-        if ( line == null || !line.startsWith( MAGIC_NUMBER ) )
+        if ( line == null || !line.startsWith( MAGIC_NUMBER_DELIMITED ) )
         {
             errorHandler.handledError( line, null );
             return;
         }
 
-        String[] tokens = line.substring( MAGIC_NUMBER.length() ).split( ":" );
+        String[] tokens = line.substring( MAGIC_NUMBER_DELIMITED.length() ).split( ":" );
         int index = -1;
         String opcode = tokens.length > ++index ? tokens[index] : null;
         ForkedProcessEvent event = opcode == null ? null : EVENTS.get( opcode );

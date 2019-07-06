@@ -21,12 +21,13 @@ package org.apache.maven.plugin.surefire.booterclient;
 
 import org.apache.maven.plugin.surefire.StartupReportConfiguration;
 import org.apache.maven.plugin.surefire.SurefireProperties;
-import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.AbstractForkInputStream;
+import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.AbstractCommandReader;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.OutputStreamFlushableCommandline;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream.TestLessInputStreamBuilder;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestProvidingInputStream;
 import org.apache.maven.plugin.surefire.booterclient.output.ForkClient;
+import org.apache.maven.plugin.surefire.extensions.LegacyForkNodeFactory;
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactory;
 import org.apache.maven.surefire.booter.AbstractPathConfiguration;
@@ -37,6 +38,7 @@ import org.apache.maven.surefire.booter.ProviderConfiguration;
 import org.apache.maven.surefire.booter.Shutdown;
 import org.apache.maven.surefire.booter.StartupConfiguration;
 import org.apache.maven.surefire.booter.SurefireBooterForkException;
+import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.report.ReporterConfiguration;
 import org.apache.maven.surefire.shared.compress.archivers.zip.Zip64Mode;
 import org.apache.maven.surefire.shared.compress.archivers.zip.ZipArchiveEntry;
@@ -170,12 +172,12 @@ public class ForkStarterTest
         e.expectMessage( containsString( "VM crash or System.exit called?" ) );
 
         Class<?>[] types = {Object.class, PropertiesWrapper.class, ForkClient.class, SurefireProperties.class,
-            int.class, AbstractForkInputStream.class, boolean.class};
+            int.class, AbstractCommandReader.class, ForkNodeFactory.class, boolean.class};
         TestProvidingInputStream testProvidingInputStream = new TestProvidingInputStream( new ArrayDeque<String>() );
         invokeMethod( forkStarter, "fork", types, null,
             new PropertiesWrapper( Collections.<String, String>emptyMap() ),
             new ForkClient( reporterFactory, null, logger, new AtomicBoolean(), 1 ),
-            new SurefireProperties(), 1, testProvidingInputStream, true );
+            new SurefireProperties(), 1, testProvidingInputStream, new LegacyForkNodeFactory(), true );
         testProvidingInputStream.close();
     }
 
@@ -224,12 +226,12 @@ public class ForkStarterTest
         DefaultReporterFactory reporterFactory = new DefaultReporterFactory( startupReportConfiguration, logger, 1 );
 
         Class<?>[] types = {Object.class, PropertiesWrapper.class, ForkClient.class, SurefireProperties.class,
-            int.class, AbstractForkInputStream.class, boolean.class};
+            int.class, AbstractCommandReader.class, ForkNodeFactory.class, boolean.class};
         TestLessInputStream testLessInputStream = new TestLessInputStreamBuilder().build();
         invokeMethod( forkStarter, "fork", types, null,
             new PropertiesWrapper( Collections.<String, String>emptyMap() ),
             new ForkClient( reporterFactory, testLessInputStream, logger, new AtomicBoolean(), 1 ),
-            new SurefireProperties(), 1, testLessInputStream, true );
+            new SurefireProperties(), 1, testLessInputStream, new LegacyForkNodeFactory(), true );
         testLessInputStream.close();
     }
 

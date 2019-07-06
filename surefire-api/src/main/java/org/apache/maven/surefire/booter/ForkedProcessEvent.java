@@ -59,7 +59,9 @@ public enum ForkedProcessEvent
 
     BOOTERCODE_JVM_EXIT_ERROR( "jvm-exit-error" );
 
-    public static final String MAGIC_NUMBER = ":maven:surefire:std:out:";
+    public static final String MAGIC_NUMBER = "maven-surefire-event";
+
+    public static final String MAGIC_NUMBER_DELIMITED = ':' + MAGIC_NUMBER + ':';
 
     public static final Map<String, ForkedProcessEvent> EVENTS = events();
 

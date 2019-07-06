@@ -299,7 +299,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:next-test\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:next-test\n" );
         verify( notifiableTestStream, times( 1 ) )
                 .provideNewTest();
         verifyNoMoreInteractions( notifiableTestStream );
@@ -334,7 +334,7 @@ public class ForkClientTest
         ConsoleLogger logger = mock( ConsoleLogger.class );
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:bye\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:bye\n" );
         client.kill();
 
         verify( notifiableTestStream, times( 1 ) )
@@ -381,7 +381,7 @@ public class ForkClientTest
                 verified[0] = true;
             }
         };
-        client.consumeMultiLineContent( ":maven:surefire:std:out:stop-on-next-test\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:stop-on-next-test\n" );
         verifyZeroInteractions( notifiableTestStream );
         verifyZeroInteractions( factory );
         assertThat( verified[0] )
@@ -418,7 +418,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:std-out-stream:normal-run:UTF-8:bXNn\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:std-out-stream:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
                 .createReporter();
@@ -463,7 +463,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:std-out-stream-new-line:normal-run:UTF-8:bXNn\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:std-out-stream-new-line:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
                 .createReporter();
@@ -508,7 +508,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:std-err-stream:normal-run:UTF-8:bXNn\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:std-err-stream:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
                 .createReporter();
@@ -553,7 +553,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:std-err-stream-new-line:normal-run:UTF-8:bXNn\n" );
+        client.consumeMultiLineContent( ":maven-surefire-event:std-err-stream-new-line:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
                 .createReporter();
@@ -598,7 +598,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:console-error-log:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:console-error-log:UTF-8:"
                 + encodeBase64String( "Listening for transport dt_socket at address:".getBytes( UTF_8 ) )
                 + ":-:-:-" );
         verifyZeroInteractions( notifiableTestStream );
@@ -649,7 +649,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:console-error-log:UTF-8"
+        client.consumeMultiLineContent( ":maven-surefire-event:console-error-log:UTF-8"
                 + ":" + encodeBase64String( "Listening for transport dt_socket at address:".getBytes( UTF_8 ) )
                 + ":" + encodeBase64String( "s1".getBytes( UTF_8 ) )
                 + ":" + encodeBase64String( "s2".getBytes( UTF_8 ) ) );
@@ -709,7 +709,7 @@ public class ForkClientTest
         when( logger.isWarnEnabled() )
                 .thenReturn( true );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:console-warning-log:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:console-warning-log:UTF-8:"
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -757,7 +757,7 @@ public class ForkClientTest
         when( logger.isDebugEnabled() )
                 .thenReturn( true );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:console-debug-log:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:console-debug-log:UTF-8:"
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -803,7 +803,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:console-info-log:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:console-info-log:UTF-8:"
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -849,7 +849,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:sys-prop:normal-run:UTF-8:azE=:djE="
+        client.consumeMultiLineContent( ":maven-surefire-event:sys-prop:normal-run:UTF-8:azE=:djE="
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
         verifyZeroInteractions( factory );
@@ -928,7 +928,7 @@ public class ForkClientTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:testset-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:testset-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"
@@ -1063,7 +1063,7 @@ public class ForkClientTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:testset-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:testset-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + encodedSourceText
@@ -1194,7 +1194,7 @@ public class ForkClientTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:testset-completed:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:testset-completed:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"
@@ -1323,7 +1323,7 @@ public class ForkClientTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"
@@ -1454,7 +1454,7 @@ public class ForkClientTest
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":-:-:-:-:-:-:-:-:-" );
 
@@ -1462,7 +1462,7 @@ public class ForkClientTest
                 .hasSize( 1 )
                 .contains( "pkg.MyTest" );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-succeeded:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-succeeded:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"
@@ -1596,7 +1596,7 @@ public class ForkClientTest
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":-:-:-:-:-:-:-:-:-" );
 
@@ -1604,7 +1604,7 @@ public class ForkClientTest
                 .hasSize( 1 )
                 .contains( "pkg.MyTest" );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-failed:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-failed:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"
@@ -1742,7 +1742,7 @@ public class ForkClientTest
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":-:-:-:-:-:-:-:-:-" );
 
@@ -1750,7 +1750,7 @@ public class ForkClientTest
                 .hasSize( 1 )
                 .contains( "pkg.MyTest" );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-skipped:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-skipped:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"
@@ -1890,7 +1890,7 @@ public class ForkClientTest
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + encodedSourceText
@@ -1900,7 +1900,7 @@ public class ForkClientTest
                 .hasSize( 1 )
                 .contains( "pkg.MyTest" );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-error:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-error:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + encodedSourceText
@@ -2036,7 +2036,7 @@ public class ForkClientTest
 
         ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-starting:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":-:-:-:-:-:-:-:-:-" );
 
@@ -2044,7 +2044,7 @@ public class ForkClientTest
                 .hasSize( 1 )
                 .contains( "pkg.MyTest" );
 
-        client.consumeMultiLineContent( ":maven:surefire:std:out:test-assumption-failure:normal-run:UTF-8:"
+        client.consumeMultiLineContent( ":maven-surefire-event:test-assumption-failure:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
                 + "-"

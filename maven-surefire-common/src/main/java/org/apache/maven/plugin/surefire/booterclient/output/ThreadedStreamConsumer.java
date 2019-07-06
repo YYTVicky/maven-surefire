@@ -20,8 +20,10 @@ package org.apache.maven.plugin.surefire.booterclient.output;
  */
 
 import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
+import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.util.internal.DaemonThreadFactory;
 
+import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -36,7 +38,7 @@ import static java.lang.Thread.currentThread;
  * @author Kristian Rosenvold
  */
 public final class ThreadedStreamConsumer
-        implements StreamConsumer, Closeable
+        implements EventHandler, StreamConsumer, Closeable
 {
     private static final String END_ITEM = "";
 
@@ -113,7 +115,14 @@ public final class ThreadedStreamConsumer
     }
 
     @Override
-    public void consumeLine( String s )
+    // todo remove this method and use object instead of string
+    public void handleEvent( @Nonnull String event )
+    {
+        consumeLine( event );
+    }
+
+    @Override
+    public void consumeLine( @Nonnull String s )
     {
         if ( stop.get() )
         {

@@ -20,7 +20,7 @@ package org.apache.maven.plugin.surefire.booterclient.output;
  */
 
 import org.apache.maven.plugin.surefire.log.api.ConsoleLoggerUtils;
-import org.apache.maven.surefire.booter.ForkedChannelEncoder;
+import org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder;
 import org.apache.maven.surefire.report.ReportEntry;
 import org.apache.maven.surefire.report.RunMode;
 import org.apache.maven.surefire.report.SafeThrowable;
@@ -93,8 +93,8 @@ public class ForkedChannelDecoderTest
         public void shouldHaveSystemProperty() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.sendSystemProperties( ObjectUtils.systemProps() );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.sendSystemProperties( ObjectUtils.systemProps() );
 
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
             decoder.setSystemPropertiesListener( new PropertyEventAssertionListener() );
@@ -259,11 +259,11 @@ public class ForkedChannelDecoderTest
         public void shouldSendByeEvent() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.bye();
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.bye();
             String read = new String( out.toByteArray(), UTF_8 );
             assertThat( read )
-                    .isEqualTo( ":maven:surefire:std:out:bye\n" );
+                    .isEqualTo( ":maven-surefire-event:bye\n" );
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
             decoder.setByeListener( new EventAssertionListener() );
@@ -279,11 +279,11 @@ public class ForkedChannelDecoderTest
         {
 
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stopOnNextTest();
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stopOnNextTest();
             String read = new String( out.toByteArray(), UTF_8 );
             assertThat( read )
-                    .isEqualTo( ":maven:surefire:std:out:stop-on-next-test\n" );
+                    .isEqualTo( ":maven-surefire-event:stop-on-next-test\n" );
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
             decoder.setStopOnNextTestListener( new EventAssertionListener() );
@@ -336,11 +336,11 @@ public class ForkedChannelDecoderTest
         {
 
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.acquireNextTest();
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.acquireNextTest();
             String read = new String( out.toByteArray(), UTF_8 );
             assertThat( read )
-                    .isEqualTo( ":maven:surefire:std:out:next-test\n" );
+                    .isEqualTo( ":maven-surefire-event:next-test\n" );
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
             decoder.setAcquireNextTestListener( new EventAssertionListener() );
@@ -356,8 +356,8 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.consoleInfoLog( "msg" );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.consoleInfoLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -374,8 +374,8 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.consoleErrorLog( "msg" );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.consoleErrorLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -394,8 +394,8 @@ public class ForkedChannelDecoderTest
 
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.consoleErrorLog( t );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.consoleErrorLog( t );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -413,9 +413,9 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
             StackTraceWriter stackTraceWriter = new DeserializedStacktraceWriter( "1", "2", "3" );
-            forkedChannelEncoder.consoleErrorLog( stackTraceWriter, false );
+            encoder.consoleErrorLog( stackTraceWriter, false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -432,8 +432,8 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.consoleDebugLog( "msg" );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.consoleDebugLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -450,8 +450,8 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.consoleWarningLog( "msg" );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.consoleWarningLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -467,8 +467,8 @@ public class ForkedChannelDecoderTest
         public void testStdOutStream() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stdOut( "msg", false );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stdOut( "msg", false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -484,8 +484,8 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrint() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stdOut( "", false );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stdOut( "", false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -501,8 +501,8 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrintWithNull() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stdOut( null, false );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stdOut( null, false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -518,8 +518,8 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrintln() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stdOut( "", true );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stdOut( "", true );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -535,8 +535,8 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrintlnWithNull() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stdOut( null, true );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stdOut( null, true );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -552,8 +552,8 @@ public class ForkedChannelDecoderTest
         public void testStdErrStream() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.stdErr( "msg", false );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.stdErr( "msg", false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -569,8 +569,8 @@ public class ForkedChannelDecoderTest
         public void shouldCountSameNumberOfSystemProperties() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
-            forkedChannelEncoder.sendSystemProperties( ObjectUtils.systemProps() );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            encoder.sendSystemProperties( ObjectUtils.systemProps() );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -597,22 +597,22 @@ public class ForkedChannelDecoderTest
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
             decoder.setSystemPropertiesListener( new PropertyEventAssertionListener() );
             AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( ":maven:surefire:std:out:abnormal-run:-", errorHandler );
+            decoder.handleEvent( ":maven-surefire-event:abnormal-run:-", errorHandler );
             verify( errorHandler, times( 1 ) )
-                    .handledError( eq( ":maven:surefire:std:out:abnormal-run:-" ), nullable( Throwable.class ) );
+                    .handledError( eq( ":maven-surefire-event:abnormal-run:-" ), nullable( Throwable.class ) );
         }
 
         @Test
         public void shouldHandleExit() throws IOException
         {
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
             StackTraceWriter stackTraceWriter = mock( StackTraceWriter.class );
             when( stackTraceWriter.getThrowable() ).thenReturn( new SafeThrowable( "1" ) );
             when( stackTraceWriter.smartTrimmedStackTrace() ).thenReturn( "2" );
             when( stackTraceWriter.writeTraceToString() ).thenReturn( "3" );
             when( stackTraceWriter.writeTrimmedTraceToString() ).thenReturn( "4" );
-            forkedChannelEncoder.sendExitEvent( stackTraceWriter, false );
+            encoder.sendExitEvent( stackTraceWriter, false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
@@ -714,10 +714,10 @@ public class ForkedChannelDecoderTest
 
             Stream out = Stream.newStream();
 
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
 
-            ForkedChannelEncoder.class.getMethod( operation[0], ReportEntry.class, boolean.class )
-                    .invoke( forkedChannelEncoder, reportEntry, trim );
+            LegacyMasterProcessChannelEncoder.class.getMethod( operation[0], ReportEntry.class, boolean.class )
+                    .invoke( encoder, reportEntry, trim );
 
             ForkedChannelDecoder decoder = new ForkedChannelDecoder();
 

@@ -20,7 +20,6 @@ package org.apache.maven.surefire.extensions.util;
  */
 
 import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -33,8 +32,12 @@ public final class CountdownCloseable
     private final Closeable closeable;
     private volatile int countdown;
 
-    public CountdownCloseable( @Nonnull Closeable closeable, @Nonnegative int countdown )
+    public CountdownCloseable( Closeable closeable, @Nonnegative int countdown )
     {
+        if ( closeable == null && countdown > 0 )
+        {
+            throw new IllegalStateException( "closeable is null and countdown is " + countdown );
+        }
         this.closeable = closeable;
         this.countdown = countdown;
     }
