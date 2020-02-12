@@ -320,7 +320,7 @@ public class ForkedChannelDecoderTest
             when( reportEntry.getStackTraceWriter() ).thenReturn( stackTraceWriter );
 
             Stream out = Stream.newStream();
-            ForkedChannelEncoder forkedChannelEncoder = new ForkedChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder forkedChannelEncoder = new LegacyMasterProcessChannelEncoder( out );
             forkedChannelEncoder.testFailed( reportEntry, true );
             String line = new String( out.toByteArray(), UTF_8 );
 
