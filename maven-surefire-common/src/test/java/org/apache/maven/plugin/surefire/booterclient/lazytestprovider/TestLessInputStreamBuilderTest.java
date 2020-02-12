@@ -151,11 +151,7 @@ public class TestLessInputStreamBuilderTest
                 {
                     idx = 0;
                     Command cmd = pluginIs.readNextCommand();
-                    if ( cmd == null )
-                    {
-                        buffer = null;
-                    }
-                    else
+                    if ( cmd != null )
                     {
                         MasterProcessCommand cmdType = cmd.getCommandType();
                         buffer = cmdType.hasDataType() ? cmdType.encode( cmd.getData() ) : cmdType.encode();
