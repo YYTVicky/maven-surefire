@@ -200,7 +200,8 @@ public class ClasspathTest
         String thisPath = "/" + target.getName().replace( '.', '/' ) + ".class";
         URL url = target.getResource( thisPath );
         assertTrue( url.toString().endsWith( thisPath ) );
-        String oneClasspath = new URL( url.toString().replace( thisPath, "" ).replace( "!", "" ) ).getFile();
+        String s = url.toString().replace( thisPath, "" ).replace( "!", "" ).replace( "jar:file:", "file:" );
+        String oneClasspath = new URL( s ).getFile();
         assertTrue( new File( oneClasspath ).exists() );
         Classpath classpath = Classpath.emptyClasspath();
         ClassLoader classLoader = classpath.addClassPathElementUrl( new File( oneClasspath ).getCanonicalPath() )
