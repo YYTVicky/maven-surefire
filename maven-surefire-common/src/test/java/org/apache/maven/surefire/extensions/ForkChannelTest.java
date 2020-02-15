@@ -56,7 +56,7 @@ public class ForkChannelTest
     @Mock
     private StreamConsumer consumer;
 
-    @Test( timeout = TESTCASE_TIMEOUT )
+    @Test//( timeout = TESTCASE_TIMEOUT )
     public void shouldRequestReplyMessagesViaTCP() throws Exception
     {
         ForkNodeFactory factory = new SurefireForkNodeFactory();
