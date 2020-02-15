@@ -61,7 +61,7 @@ final class SurefireForkChannel extends ForkChannel
     }
 
     @Override
-    public void openChannel() throws IOException
+    public void connectToClient() throws IOException
     {
         if ( channel != null )
         {

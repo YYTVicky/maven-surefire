@@ -96,14 +96,17 @@ public class ForkChannelTest
         } );
         client.start();
 
-        channel.openChannel();
+        channel.connectToClient();
         SECONDS.sleep( 3L );
 
         TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
         TestLessInputStream commandReader = builder.build();
-        commandReader.noop();
         channel.bindCommandReader( commandReader ).start();
         channel.bindEventHandler( consumer ).start();
+
+        SECONDS.sleep( 3L );
+
+        commandReader.noop();
 
         client.join( TESTCASE_TIMEOUT );
 

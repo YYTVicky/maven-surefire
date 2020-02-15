@@ -33,7 +33,7 @@ import java.nio.channels.WritableByteChannel;
  * and dedicated forked JVM {@link #getForkChannelId()}. It represents a server.
  * <br>
  * <br>
- * It opens the channel via {@link #openChannel()}, provides a connection string {@link #getForkNodeConnectionString()}
+ * It opens the channel via {@link #connectToClient()}, provides a connection string {@link #getForkNodeConnectionString()}
  * used by the client in the JVM, binds event and command handlers.
  *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
@@ -51,7 +51,7 @@ public abstract class ForkChannel implements Closeable
         this.forkChannelId = forkChannelId;
     }
 
-    public abstract void openChannel() throws IOException;
+    public abstract void connectToClient() throws IOException;
 
     /**
      * This is server related class, which if binds to a TCP port, determines the connection string for the client.

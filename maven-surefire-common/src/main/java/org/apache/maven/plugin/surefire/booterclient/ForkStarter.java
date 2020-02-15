@@ -632,7 +632,7 @@ public class ForkStarter
             CommandlineStreams streams = exec.execute();
             closer.addCloseable( streams );
 
-            forkChannel.openChannel();
+            forkChannel.connectToClient();
 
             in = forkChannel.useStdIn()
                 ? forkChannel.bindCommandReader( commandReader, streams.getStdInChannel() )

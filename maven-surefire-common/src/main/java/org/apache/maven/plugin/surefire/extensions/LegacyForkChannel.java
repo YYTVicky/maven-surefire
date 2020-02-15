@@ -42,7 +42,7 @@ final class LegacyForkChannel extends ForkChannel
     }
 
     @Override
-    public void openChannel()
+    public void connectToClient()
     {
     }
 
