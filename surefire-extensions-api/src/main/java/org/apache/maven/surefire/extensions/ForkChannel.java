@@ -33,8 +33,8 @@ import java.nio.channels.WritableByteChannel;
  * and dedicated forked JVM {@link #getForkChannelId()}. It represents a server.
  * <br>
  * <br>
- * It opens the channel via {@link #connectToClient()}, provides a connection string {@link #getForkNodeConnectionString()}
- * used by the client in the JVM, binds event and command handlers.
+ * It connects to a client {@link #connectToClient()} and provides a connection string
+ * {@link #getForkNodeConnectionString()} needed by the client in the JVM and binds event and command handlers.
  *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
  * @since 3.0.0-M5
