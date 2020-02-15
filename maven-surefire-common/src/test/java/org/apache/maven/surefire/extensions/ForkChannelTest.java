@@ -26,7 +26,6 @@ import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.Socket;
 import java.net.URI;
 import java.util.Queue;
@@ -43,6 +42,8 @@ import static org.fest.assertions.Assertions.assertThat;
 public class ForkChannelTest
 {
     private static final long TESTCASE_TIMEOUT = 30_000L;
+
+    private final AtomicBoolean hasError = new AtomicBoolean();
 
     @Test( timeout = TESTCASE_TIMEOUT )
     public void shouldRequestReplyMessagesViaTCP() throws Exception
@@ -71,16 +72,6 @@ public class ForkChannelTest
         Consumer consumer = new Consumer();
 
         Client client = new Client( uri.getPort() );
-        final AtomicBoolean hasError = new AtomicBoolean();
-        client.setUncaughtExceptionHandler( new UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException( Thread t, Throwable e )
-            {
-                hasError.set( true );
-                e.printStackTrace( System.err );
-            }
-        } );
         client.start();
 
         channel.connectToClient();
@@ -116,7 +107,7 @@ public class ForkChannelTest
         }
     }
 
-    private static class Client extends Thread
+    private final class Client extends Thread
     {
         private final int port;
 
@@ -138,8 +129,15 @@ public class ForkChannelTest
             }
             catch ( IOException e )
             {
+                hasError.set( true );
                 e.printStackTrace();
                 throw new IllegalStateException( e );
+            }
+            catch ( RuntimeException e )
+            {
+                hasError.set( true );
+                e.printStackTrace();
+                throw e;
             }
         }
     }
