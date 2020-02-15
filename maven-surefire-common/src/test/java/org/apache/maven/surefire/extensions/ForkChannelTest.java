@@ -142,6 +142,7 @@ public class ForkChannelTest
             }
             catch ( IOException e )
             {
+                e.printStackTrace();
                 throw new IllegalStateException( e );
             }
         }
