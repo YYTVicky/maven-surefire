@@ -49,51 +49,54 @@ public class ForkChannelTest
     public void shouldRequestReplyMessagesViaTCP() throws Exception
     {
         ForkNodeFactory factory = new SurefireForkNodeFactory();
-        ForkChannel channel = factory.createForkChannel( 1 );
+        try ( ForkChannel channel = factory.createForkChannel( 1 ) )
+        {
+            assertThat( channel.getForkChannelId() )
+                .isEqualTo( 1 );
 
-        assertThat( channel.getForkChannelId() )
-            .isEqualTo( 1 );
+            assertThat( channel.useStdIn() )
+                .isFalse();
 
-        assertThat( channel.useStdIn() )
-            .isFalse();
+            assertThat( channel.useStdOut() )
+                .isFalse();
 
-        assertThat( channel.useStdOut() )
-            .isFalse();
+            assertThat( channel.getForkNodeConnectionString() )
+                .startsWith( "tcp://127.0.0.1:" )
+                .isNotEqualTo( "tcp://127.0.0.1:" );
 
-        assertThat( channel.getForkNodeConnectionString() )
-            .startsWith( "tcp://127.0.0.1:" )
-            .isNotEqualTo( "tcp://127.0.0.1:" );
+            URI uri = new URI( channel.getForkNodeConnectionString() );
 
-        URI uri = new URI( channel.getForkNodeConnectionString() );
+            assertThat( uri.getPort() )
+                .isPositive();
 
-        assertThat( uri.getPort() )
-            .isPositive();
+            Consumer consumer = new Consumer();
 
-        Consumer consumer = new Consumer();
+            Client client = new Client( uri.getPort() );
+            client.start();
 
-        Client client = new Client( uri.getPort() );
-        client.start();
+            channel.connectToClient();
+            SECONDS.sleep( 3L );
 
-        channel.connectToClient();
-        SECONDS.sleep( 3L );
+            TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
+            TestLessInputStream commandReader = builder.build();
+            channel.bindCommandReader( commandReader ).start();
+            channel.bindEventHandler( consumer ).start();
 
-        TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
-        TestLessInputStream commandReader = builder.build();
-        channel.bindCommandReader( commandReader ).start();
-        channel.bindEventHandler( consumer ).start();
+            SECONDS.sleep( 3L );
 
-        SECONDS.sleep( 3L );
+            commandReader.noop();
 
-        commandReader.noop();
+            SECONDS.sleep( 3L );
 
-        client.join( TESTCASE_TIMEOUT );
+            client.join( TESTCASE_TIMEOUT );
 
-        assertThat( hasError.get() )
-            .isFalse();
+            assertThat( hasError.get() )
+                .isFalse();
 
-        assertThat( consumer.lines )
-            .hasSize( 1 )
-            .containsOnly( "Hi There!" );
+            assertThat( consumer.lines )
+                .hasSize( 1 )
+                .containsOnly( "Hi There!" );
+        }
     }
 
     private static class Consumer implements StreamConsumer
