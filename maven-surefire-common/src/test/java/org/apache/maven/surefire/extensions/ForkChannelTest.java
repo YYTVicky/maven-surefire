@@ -24,39 +24,27 @@ import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessIn
 import org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory;
 import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.Socket;
 import java.net.URI;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  *
  */
-@RunWith( PowerMockRunner.class )
-@PowerMockIgnore( { "org.jacoco.agent.rt.*", "com.vladium.emma.rt.*" } )
 public class ForkChannelTest
 {
     private static final long TESTCASE_TIMEOUT = 30_000L;
 
-    @Mock
-    private StreamConsumer consumer;
-
-    @Test
+    @Test( timeout = TESTCASE_TIMEOUT )
     public void shouldRequestReplyMessagesViaTCP() throws Exception
     {
         ForkNodeFactory factory = new SurefireForkNodeFactory();
@@ -80,8 +68,7 @@ public class ForkChannelTest
         assertThat( uri.getPort() )
             .isPositive();
 
-        ArgumentCaptor<String> line = ArgumentCaptor.forClass( String.class );
-        doNothing().when( consumer ).consumeLine( anyString() );
+        Consumer consumer = new Consumer();
 
         Client client = new Client( uri.getPort() );
         final AtomicBoolean hasError = new AtomicBoolean();
@@ -113,11 +100,20 @@ public class ForkChannelTest
         assertThat( hasError.get() )
             .isFalse();
 
-        verify( consumer, times( 1 ) )
-            .consumeLine( line.capture() );
+        assertThat( consumer.lines )
+            .hasSize( 1 )
+            .containsOnly( "Hi There!" );
+    }
 
-        assertThat( line.getValue() )
-            .isEqualTo( "Hi There!" );
+    private static class Consumer implements StreamConsumer
+    {
+        final Queue<String> lines = new ConcurrentLinkedQueue<>();
+
+        @Override
+        public void consumeLine( String s )
+        {
+            lines.add( s );
+        }
     }
 
     private static class Client extends Thread
