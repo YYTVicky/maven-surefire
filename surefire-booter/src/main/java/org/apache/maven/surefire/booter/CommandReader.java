@@ -20,8 +20,6 @@ package org.apache.maven.surefire.booter;
  */
 
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
-import org.apache.maven.surefire.booter.spi.MasterProcessCommandNoMagicNumberException;
-import org.apache.maven.surefire.booter.spi.MasterProcessUnknownCommandException;
 import org.apache.maven.surefire.providerapi.CommandChainReader;
 import org.apache.maven.surefire.providerapi.CommandListener;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
@@ -393,12 +391,12 @@ public final class CommandReader implements CommandChainReader
                             CommandReader.this.wakeupIterator();
                             callListeners( command );
                                 break;
-                            case BYE_ACK:
-                                callListeners( command );
+                        case BYE_ACK:
+                            callListeners( command );
                             // After SHUTDOWN no more commands can come.
-                                // Hence, do NOT go back to blocking in I/O.
-                                CommandReader.this.state.set( TERMINATED );
-                                break;
+                            // Hence, do NOT go back to blocking in I/O.
+                            CommandReader.this.state.set( TERMINATED );
+                            break;
                         default:
                             callListeners( command );
                             break;
@@ -418,11 +416,6 @@ public final class CommandReader implements CommandChainReader
                     exitByConfiguration();
                     // does not go to finally for non-default config: Shutdown.EXIT or Shutdown.KILL
                 }
-            }
-            catch ( MasterProcessCommandNoMagicNumberException | MasterProcessUnknownCommandException e )
-            {
-                DumpErrorSingleton.getSingleton().dumpStreamException( e );
-                CommandReader.this.logger.error( e );
             }
             catch ( IOException e )
             {

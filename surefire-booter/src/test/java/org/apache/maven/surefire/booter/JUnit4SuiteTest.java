@@ -46,7 +46,7 @@ public class JUnit4SuiteTest extends TestCase
         suite.addTest( new JUnit4TestAdapter( BooterDeserializerTest.class ) );
         suite.addTestSuite( ClasspathTest.class );
         suite.addTestSuite( PropertiesWrapperTest.class );
-        suite.addTestSuite( LegacyMasterProcessChannelDecoderTest.class );
+        suite.addTest( new JUnit4TestAdapter( LegacyMasterProcessChannelDecoderTest.class ) );
         suite.addTest( new JUnit4TestAdapter( LegacyMasterProcessChannelEncoderTest.class ) );
         suite.addTestSuite( SurefireReflectorTest.class );
         return suite;

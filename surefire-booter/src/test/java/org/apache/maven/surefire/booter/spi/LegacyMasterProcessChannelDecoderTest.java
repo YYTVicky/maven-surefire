@@ -19,112 +19,192 @@ package org.apache.maven.surefire.booter.spi;
  * under the License.
  */
 
-import junit.framework.TestCase;
 import org.apache.maven.surefire.booter.Command;
-import org.apache.maven.surefire.booter.MasterProcessCommand;
 import org.apache.maven.surefire.booter.Shutdown;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
 import static org.apache.maven.surefire.booter.MasterProcessCommand.BYE_ACK;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.apache.maven.surefire.booter.MasterProcessCommand.NOOP;
+import static org.apache.maven.surefire.booter.MasterProcessCommand.RUN_CLASS;
+import static org.apache.maven.surefire.booter.MasterProcessCommand.SHUTDOWN;
+import static org.apache.maven.surefire.booter.MasterProcessCommand.SKIP_SINCE_NEXT_TEST;
+import static org.apache.maven.surefire.booter.MasterProcessCommand.TEST_SET_FINISHED;
+import static org.apache.maven.surefire.booter.Shutdown.DEFAULT;
+import static org.apache.maven.surefire.booter.Shutdown.EXIT;
+import static org.apache.maven.surefire.booter.Shutdown.KILL;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for {@link LegacyMasterProcessChannelDecoder}.
  */
 public class LegacyMasterProcessChannelDecoderTest
-    extends TestCase
 {
-    public void testDataToByteArrayAndBack() throws IOException
+    @Test
+    public void testDecoderRunClass() throws IOException
     {
-        for ( MasterProcessCommand commandType : MasterProcessCommand.values() )
-        {
-            switch ( commandType )
-            {
-                case RUN_CLASS:
-                    assertEquals( String.class, commandType.getDataType() );
-                    byte[] encoded = commandType.encode( "pkg.Test" );
-                    assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-command:run-testclass:pkg.Test:" );
-                    byte[] line = addNL( encoded, '\n' );
-                    InputStream is = new ByteArrayInputStream( line );
-                    LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
-                    Command command = decoder.decode();
-                    assertThat( command.getCommandType(), is( commandType ) );
-                    assertThat( command.getData(), is( "pkg.Test" ) );
-                    break;
-                case TEST_SET_FINISHED:
-                    assertThat( commandType ).isSameAs( Command.TEST_SET_FINISHED.getCommandType() );
-                    assertEquals( Void.class, commandType.getDataType() );
-                    encoded = commandType.encode();
-                    assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-command:testset-finished:" );
-                    is = new ByteArrayInputStream( encoded );
-                    decoder = new LegacyMasterProcessChannelDecoder( is );
-                    command = decoder.decode();
-                    assertThat( command.getCommandType(), is( commandType ) );
-                    assertNull( command.getData() );
-                    break;
-                case SKIP_SINCE_NEXT_TEST:
-                    assertThat( commandType ).isSameAs( Command.SKIP_SINCE_NEXT_TEST.getCommandType() );
-                    assertEquals( Void.class, commandType.getDataType() );
-                    encoded = commandType.encode();
-                    assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-command:skip-since-next-test:" );
-                    is = new ByteArrayInputStream( encoded );
-                    decoder = new LegacyMasterProcessChannelDecoder( is );
-                    command = decoder.decode();
-                    assertThat( command.getCommandType(), is( commandType ) );
-                    assertNull( command.getData() );
-                    break;
-                case SHUTDOWN:
-                    assertEquals( String.class, commandType.getDataType() );
-                    encoded = commandType.encode( Shutdown.EXIT.name() );
-                    assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-command:shutdown:EXIT:" );
-                    is = new ByteArrayInputStream( encoded );
-                    decoder = new LegacyMasterProcessChannelDecoder( is );
-                    command = decoder.decode();
-                    assertThat( command.getCommandType(), is( commandType ) );
-                    assertThat( command.getData(), is( "EXIT" ) );
-                    break;
-                case NOOP:
-                    assertThat( commandType ).isSameAs( Command.NOOP.getCommandType() );
-                    assertEquals( Void.class, commandType.getDataType() );
-                    encoded = commandType.encode();
-                    assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-command:noop:" );
-                    is = new ByteArrayInputStream( encoded );
-                    decoder = new LegacyMasterProcessChannelDecoder( is );
-                    command = decoder.decode();
-                    assertThat( command.getCommandType(), is( commandType ) );
-                    assertNull( command.getData() );
-                    break;
-                case BYE_ACK:
-                    assertThat( commandType ).isSameAs( Command.BYE_ACK.getCommandType() );
-                    assertEquals( Void.class, commandType.getDataType() );
-                    encoded = commandType.encode();
-                    assertThat( new String( encoded ) )
-                            .isEqualTo( ":maven-surefire-command:bye-ack:" );
-                    is = new ByteArrayInputStream( encoded );
-                    decoder = new LegacyMasterProcessChannelDecoder( is );
-                    command = decoder.decode();
-                    assertThat( command.getCommandType(), is( commandType ) );
-                    assertNull( command.getData() );
-                    break;
-                default:
-                    fail();
-            }
-        }
+        assertEquals( String.class, RUN_CLASS.getDataType() );
+        byte[] encoded = RUN_CLASS.encode( "pkg.Test" );
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:run-testclass:pkg.Test:" );
+        byte[] line = addNL( encoded, '\n' );
+        InputStream is = new ByteArrayInputStream( line );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( RUN_CLASS );
+        assertThat( command.getData() ).isEqualTo( "pkg.Test" );
     }
 
-    public void testShouldDecodeTwoCommands() throws IOException
+    @Test
+    public void testDecoderTestsetFinished() throws IOException
     {
-        String cmd = ":maven-surefire-command:bye-ack\n:maven-surefire-command:bye-ack:";
+        Command command = Command.TEST_SET_FINISHED;
+        assertThat( command.getCommandType() ).isSameAs( TEST_SET_FINISHED );
+        assertEquals( Void.class, TEST_SET_FINISHED.getDataType() );
+        byte[] encoded = TEST_SET_FINISHED.encode();
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:testset-finished:" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( TEST_SET_FINISHED );
+        assertNull( command.getData() );
+    }
+
+    @Test
+    public void testDecoderSkipSinceNextTest() throws IOException
+    {
+        Command command = Command.SKIP_SINCE_NEXT_TEST;
+        assertThat( command.getCommandType() ).isSameAs( SKIP_SINCE_NEXT_TEST );
+        assertEquals( Void.class, SKIP_SINCE_NEXT_TEST.getDataType() );
+        byte[] encoded = SKIP_SINCE_NEXT_TEST.encode();
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:skip-since-next-test:" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( SKIP_SINCE_NEXT_TEST );
+        assertNull( command.getData() );
+    }
+
+    @Test
+    public void testDecoderShutdownWithExit() throws IOException
+    {
+        Shutdown shutdownType = EXIT;
+        assertEquals( String.class, SHUTDOWN.getDataType() );
+        byte[] encoded = SHUTDOWN.encode( shutdownType.name() );
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:shutdown:" + shutdownType + ":" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( SHUTDOWN );
+        assertThat( command.getData() ).isEqualTo( shutdownType.name() );
+    }
+
+    @Test
+    public void testDecoderShutdownWithKill() throws IOException
+    {
+        Shutdown shutdownType = KILL;
+        assertEquals( String.class, SHUTDOWN.getDataType() );
+        byte[] encoded = SHUTDOWN.encode( shutdownType.name() );
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:shutdown:" + shutdownType + ":" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( SHUTDOWN );
+        assertThat( command.getData() ).isEqualTo( shutdownType.name() );
+    }
+
+    @Test
+    public void testDecoderShutdownWithDefault() throws IOException
+    {
+        Shutdown shutdownType = DEFAULT;
+        assertEquals( String.class, SHUTDOWN.getDataType() );
+        byte[] encoded = SHUTDOWN.encode( shutdownType.name() );
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:shutdown:" + shutdownType + ":" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( SHUTDOWN );
+        assertThat( command.getData() ).isEqualTo( shutdownType.name() );
+    }
+
+    @Test
+    public void testDecoderNoop() throws IOException
+    {
+        assertThat( NOOP ).isSameAs( Command.NOOP.getCommandType() );
+        assertEquals( Void.class, NOOP.getDataType() );
+        byte[] encoded = NOOP.encode();
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:noop:" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( NOOP );
+        assertNull( command.getData() );
+    }
+
+    @Test
+    public void shouldIgnoreDamagedStream() throws IOException
+    {
+        assertThat( BYE_ACK ).isSameAs( Command.BYE_ACK.getCommandType() );
+        assertEquals( Void.class, BYE_ACK.getDataType() );
+        byte[] encoded = BYE_ACK.encode();
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:bye-ack:" );
+        byte[] streamContent = ( "<something>" + new String( encoded ) + "<damaged>" ).getBytes();
+        ByteArrayInputStream is = new ByteArrayInputStream( streamContent );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( BYE_ACK );
+        assertNull( command.getData() );
+    }
+
+    @Test
+    public void shouldIgnoreDamagedHeader() throws IOException
+    {
+        assertThat( BYE_ACK ).isSameAs( Command.BYE_ACK.getCommandType() );
+        assertEquals( Void.class, BYE_ACK.getDataType() );
+        byte[] encoded = BYE_ACK.encode();
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:bye-ack:" );
+        byte[] streamContent = ( ":<damaged>:" + new String( encoded ) ).getBytes();
+        ByteArrayInputStream is = new ByteArrayInputStream( streamContent );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( BYE_ACK );
+        assertNull( command.getData() );
+    }
+
+    @Test
+    public void testDecoderByeAck() throws IOException
+    {
+        assertThat( BYE_ACK ).isSameAs( Command.BYE_ACK.getCommandType() );
+        assertEquals( Void.class, BYE_ACK.getDataType() );
+        byte[] encoded = BYE_ACK.encode();
+        assertThat( new String( encoded ) )
+            .isEqualTo( ":maven-surefire-command:bye-ack:" );
+        ByteArrayInputStream is = new ByteArrayInputStream( encoded );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( BYE_ACK );
+        assertNull( command.getData() );
+    }
+
+    @Test
+    public void shouldDecodeTwoCommands() throws IOException
+    {
+        String cmd = ":maven-surefire-command:bye-ack:\r\n:maven-surefire-command:bye-ack:";
         InputStream is = new ByteArrayInputStream( cmd.getBytes() );
         LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
 
@@ -135,6 +215,50 @@ public class LegacyMasterProcessChannelDecoderTest
         command = decoder.decode();
         assertThat( command.getCommandType() ).isEqualTo( BYE_ACK );
         assertThat( command.getData() ).isNull();
+
+        decoder.close();
+    }
+
+    @Test( expected = EOFException.class )
+    public void testIncompleteCommand() throws IOException
+    {
+
+        ByteArrayInputStream is = new ByteArrayInputStream( ":maven-surefire-command:".getBytes() );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        decoder.decode();
+        fail();
+    }
+
+    @Test( expected = EOFException.class )
+    public void testIncompleteCommandStart() throws IOException
+    {
+
+        ByteArrayInputStream is = new ByteArrayInputStream( new byte[] {':', '\r'} );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+        decoder.decode();
+        fail();
+    }
+
+    @Test( expected = EOFException.class )
+    public void shouldNotDecodeCorruptedCommand() throws IOException
+    {
+        String cmd = ":maven-surefire-command:bye-ack ::maven-surefire-command:";
+        InputStream is = new ByteArrayInputStream( cmd.getBytes() );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+
+        decoder.decode();
+    }
+
+    @Test
+    public void shouldSkipCorruptedCommand() throws IOException
+    {
+        String cmd = ":maven-surefire-command:bye-ack\r\n::maven-surefire-command:noop:";
+        InputStream is = new ByteArrayInputStream( cmd.getBytes() );
+        LegacyMasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( is );
+
+        Command command = decoder.decode();
+        assertThat( command.getCommandType() ).isSameAs( NOOP );
+        assertNull( command.getData() );
     }
 
     private static byte[] addNL( byte[] encoded, char... newLines )

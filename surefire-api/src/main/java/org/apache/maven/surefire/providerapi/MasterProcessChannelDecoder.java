@@ -21,6 +21,7 @@ package org.apache.maven.surefire.providerapi;
 
 import org.apache.maven.surefire.booter.Command;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
@@ -40,7 +41,7 @@ public interface MasterProcessChannelDecoder
      * @return decoded command
      * @throws IOException exception in channel
      */
-    Command decode() throws IOException;
+    @Nonnull Command decode() throws IOException;
 
     @Override
     void close() throws IOException;

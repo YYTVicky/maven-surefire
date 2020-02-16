@@ -19,6 +19,8 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
+import javax.annotation.Nonnull;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Objects.requireNonNull;
 
@@ -59,11 +61,6 @@ public enum MasterProcessCommand
         this.dataType = requireNonNull( dataType, "dataType cannot be null" );
     }
 
-    public String getOpcode()
-    {
-        return opcodeName;
-    }
-
     public Class<?> getDataType()
     {
         return dataType;
@@ -74,11 +71,11 @@ public enum MasterProcessCommand
         return dataType != Void.class;
     }
 
-    public static MasterProcessCommand byOpcode( String opcode )
+    public static MasterProcessCommand byOpcode( @Nonnull String opcode )
     {
         for ( MasterProcessCommand cmd : values() )
         {
-            if ( cmd.opcodeName.equals( opcode ) )
+            if ( cmd.opcodeName.equals( requireNonNull( opcode ) ) )
             {
                 return cmd;
             }

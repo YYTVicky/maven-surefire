@@ -29,6 +29,7 @@ import org.apache.maven.surefire.report.RunMode;
 import org.apache.maven.surefire.report.SafeThrowable;
 import org.apache.maven.surefire.report.StackTraceWriter;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
@@ -80,12 +81,12 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
     private final RunMode runMode;
     private volatile boolean trouble;
 
-    public LegacyMasterProcessChannelEncoder( OutputStream out )
+    public LegacyMasterProcessChannelEncoder( @Nonnull OutputStream out )
     {
         this( out, NORMAL_RUN );
     }
 
-    protected LegacyMasterProcessChannelEncoder( OutputStream out, RunMode runMode )
+    protected LegacyMasterProcessChannelEncoder( @Nonnull OutputStream out, @Nonnull RunMode runMode )
     {
         this.out = requireNonNull( out );
         this.runMode = requireNonNull( runMode );

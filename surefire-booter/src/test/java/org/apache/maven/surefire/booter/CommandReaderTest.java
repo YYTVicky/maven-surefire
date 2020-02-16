@@ -43,13 +43,12 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.fest.assertions.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * Testing singleton {@code MasterProcessReader} in multiple class loaders.
@@ -247,9 +246,7 @@ public class CommandReaderTest
 
     private void addTestToPipeline( String cls )
     {
-        String cmd = ":maven-surefire-command:"
-            + MasterProcessCommand.RUN_CLASS.getOpcode() + ':' + cls + '\n';
-        for ( byte cmdByte : cmd.getBytes( US_ASCII ) )
+        for ( byte cmdByte : MasterProcessCommand.RUN_CLASS.encode( cls ) )
         {
             blockingStream.add( cmdByte );
         }
@@ -257,8 +254,7 @@ public class CommandReaderTest
 
     private void addEndOfPipeline()
     {
-        String cmd = ":maven-surefire-command:" + MasterProcessCommand.TEST_SET_FINISHED.getOpcode() + '\n';
-        for ( byte cmdByte : cmd.getBytes( US_ASCII ) )
+        for ( byte cmdByte : MasterProcessCommand.TEST_SET_FINISHED.encode() )
         {
             blockingStream.add( cmdByte );
         }

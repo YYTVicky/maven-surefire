@@ -23,13 +23,14 @@ import org.apache.maven.surefire.booter.Command;
 import org.apache.maven.surefire.booter.MasterProcessCommand;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 
+import javax.annotation.Nonnull;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
+
+import static org.apache.maven.surefire.booter.MasterProcessCommand.MAGIC_NUMBER;
 
 /**
  * magic number : opcode [: opcode specific data]*
@@ -42,125 +43,117 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
 {
     private final InputStream is;
 
-    public LegacyMasterProcessChannelDecoder( InputStream is )
+    public LegacyMasterProcessChannelDecoder( @Nonnull InputStream is )
     {
         this.is = is;
     }
 
-    protected boolean hasData( String opcode )
-    {
-        MasterProcessCommand cmd = MasterProcessCommand.byOpcode( opcode );
-        return cmd == null || cmd.hasDataType();
-    }
-
-    @SuppressWarnings( "checkstyle:innerassignment" )
     @Override
+    @Nonnull
+    @SuppressWarnings( "checkstyle:innerassignment" )
     public Command decode() throws IOException
     {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder frame = new StringBuilder();
-        boolean frameStarted = false;
-        boolean frameFinished = false;
-        boolean notEndOfStream;
-        for ( int r; notEndOfStream = ( r = is.read() ) != -1 ; )
-        {
-            char c = (char) r;
-            if ( frameFinished && c == '\n' )
-            {
-                continue;
-            }
+        List<String> tokens = new ArrayList<>( 3 );
+        StringBuilder token = new StringBuilder( MAGIC_NUMBER.length() );
+        boolean endOfStream;
 
-            if ( !frameStarted )
+        start:
+        do
+        {
+            tokens.clear();
+            token.setLength( 0 );
+            boolean frameStarted = false;
+            for ( int r; !( endOfStream = ( r = is.read() ) == -1 ) ; )
             {
-                if ( c == ':' )
+                char c = (char) r;
+                if ( !frameStarted )
                 {
-                    frameStarted = true;
-                    frameFinished = false;
-                    frame.setLength( 0 );
-                    tokens.clear();
-                    continue;
-                }
-            }
-            else if ( !frameFinished )
-            {
-                boolean isColon = c == ':';
-                if ( isColon || c == '\n' || c == '\r' )
-                {
-                    tokens.add( frame.toString() );
-                    frame.setLength( 0 );
+                    if ( c == ':' )
+                    {
+                        frameStarted = true;
+                        token.setLength( 0 );
+                        tokens.clear();
+                    }
                 }
                 else
                 {
-                    frame.append( c );
-                }
-                boolean isFinishedFrame = isTokenComplete( tokens );
-                if ( isFinishedFrame )
-                {
-                    frameFinished = true;
-                    frameStarted = false;
-                    break;
+                    if ( c == ':' )
+                    {
+                        tokens.add( token.toString() );
+                        token.setLength( 0 );
+                        FrameCompletion completion = isFrameComplete( tokens );
+                        if ( completion == FrameCompletion.COMPLETE )
+                        {
+                            break;
+                        }
+                        else if ( completion == FrameCompletion.MALFORMED )
+                        {
+                            continue start;
+                        }
+                    }
+                    else
+                    {
+                        token.append( c );
+                    }
                 }
             }
 
-            boolean removed = removeUnsynchronizedTokens( tokens );
-            if ( removed && tokens.isEmpty() )
+            if ( isFrameComplete( tokens ) == FrameCompletion.COMPLETE )
             {
-                frameStarted = false;
-                frameFinished = true;
+                MasterProcessCommand cmd = MasterProcessCommand.byOpcode( tokens.get( 1 ) );
+                if ( tokens.size() == 2 )
+                {
+                    return new Command( cmd );
+                }
+                else if ( tokens.size() == 3 )
+                {
+                    return new Command( cmd, tokens.get( 2 ) );
+                }
+            }
+
+            if ( endOfStream )
+            {
+                throw new EOFException();
             }
         }
-
-        if ( !notEndOfStream )
-        {
-            throw new EOFException();
-        }
-
-        if ( tokens.size() <= 1 ) // todo
-        {
-            throw new MasterProcessCommandNoMagicNumberException( frame.toString() );
-        }
-        if ( tokens.size() == 2 )
-        {
-            return new Command( MasterProcessCommand.byOpcode( tokens.get( 1 ) ) );
-        }
-        else if ( tokens.size() == 3 )
-        {
-            return new Command( MasterProcessCommand.byOpcode( tokens.get( 1 ) ), tokens.get( 2 ) );
-        }
-        else
-        {
-            throw new MasterProcessUnknownCommandException( frame.toString() );
-        }
+        while ( true );
     }
 
-    private boolean isTokenComplete( List<String> tokens )
+    private FrameCompletion isFrameComplete( List<String> tokens )
     {
+        if ( !tokens.isEmpty() && !MAGIC_NUMBER.equals( tokens.get( 0 ) ) )
+        {
+            return FrameCompletion.MALFORMED;
+        }
+
         if ( tokens.size() >= 2 )
         {
-            return hasData( tokens.get( 1 ) ) == ( tokens.size() == 3 );
-        }
-        return false;
-    }
-
-    private boolean removeUnsynchronizedTokens( Collection<String> tokens )
-    {
-        boolean removed = false;
-        for ( Iterator<String> it = tokens.iterator(); it.hasNext(); )
-        {
-            String token = it.next();
-            if ( token.equals( MasterProcessCommand.MAGIC_NUMBER ) )
+            String opcode = tokens.get( 1 );
+            MasterProcessCommand cmd = MasterProcessCommand.byOpcode( opcode );
+            if ( cmd == null )
             {
-                break;
+                return FrameCompletion.MALFORMED;
             }
-            removed = true;
-            it.remove();
-            System.err.println( "Forked JVM could not synchronize the '" + token + "' token with preamble sequence." );
+            else if ( cmd.hasDataType() == ( tokens.size() == 3 ) )
+            {
+                return FrameCompletion.COMPLETE;
+            }
         }
-        return removed;
+        return FrameCompletion.NOT_COMPLETE;
     }
 
     @Override
     public void close()
     {
+    }
+
+    /**
+     * Determines whether the token is complete of malformed.
+     */
+    private enum FrameCompletion
+    {
+        NOT_COMPLETE,
+        COMPLETE,
+        MALFORMED
     }
 }
