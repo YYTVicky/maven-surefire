@@ -55,11 +55,11 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
     {
         List<String> tokens = new ArrayList<>( 3 );
         StringBuilder token = new StringBuilder( MAGIC_NUMBER.length() );
-        boolean endOfStream;
 
         start:
         do
         {
+            boolean endOfStream;
             tokens.clear();
             token.setLength( 0 );
             boolean frameStarted = false;
@@ -81,7 +81,7 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
                     {
                         tokens.add( token.toString() );
                         token.setLength( 0 );
-                        FrameCompletion completion = isFrameComplete( tokens );
+                        FrameCompletion completion = frameCompleteness( tokens );
                         if ( completion == FrameCompletion.COMPLETE )
                         {
                             break;
@@ -98,7 +98,7 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
                 }
             }
 
-            if ( isFrameComplete( tokens ) == FrameCompletion.COMPLETE )
+            if ( frameCompleteness( tokens ) == FrameCompletion.COMPLETE )
             {
                 MasterProcessCommand cmd = MasterProcessCommand.byOpcode( tokens.get( 1 ) );
                 if ( tokens.size() == 2 )
@@ -119,7 +119,7 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
         while ( true );
     }
 
-    private FrameCompletion isFrameComplete( List<String> tokens )
+    private static FrameCompletion frameCompleteness( List<String> tokens )
     {
         if ( !tokens.isEmpty() && !MAGIC_NUMBER.equals( tokens.get( 0 ) ) )
         {
@@ -148,7 +148,7 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
     }
 
     /**
-     * Determines whether the token is complete of malformed.
+     * Determines whether the frame is complete or malformed.
      */
     private enum FrameCompletion
     {
