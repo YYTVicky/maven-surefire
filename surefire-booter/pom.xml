@@ -124,6 +124,8 @@
         </dependencies>
         <configuration>
           <argLine>${jvm.args.tests} ${jacoco.agent}</argLine>
+            <useFile>true</useFile>
+            <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <includes>
             <include>**/JUnit4SuiteTest.java</include>
           </includes>

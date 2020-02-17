@@ -563,6 +563,7 @@ public class ForkStarter
                             boolean readTestsFromInStream )
         throws SurefireBooterForkException
     {
+        CloseableCloser closer = new CloseableCloser( forkNumber, commandReader );
         final String tempDir;
         final File surefireProperties;
         final File systPropsFile;
@@ -570,6 +571,7 @@ public class ForkStarter
         try
         {
             forkChannel = forkNodeFactory.createForkChannel( forkNumber );
+            closer.addCloseable( forkChannel );
             tempDir = forkConfiguration.getTempDirectory().getCanonicalPath();
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
             Long pluginPid = forkConfiguration.getPluginPlatform().getPluginPid();
@@ -613,7 +615,7 @@ public class ForkStarter
         }
 
         ThreadedStreamConsumer eventConsumer = new ThreadedStreamConsumer( forkClient );
-        CloseableCloser closer = new CloseableCloser( forkNumber, eventConsumer, commandReader );
+        closer.addCloseable( eventConsumer );
 
         log.debug( "Forking command line: " + cli );
 
@@ -634,16 +636,12 @@ public class ForkStarter
 
             forkChannel.connectToClient();
 
-            in = forkChannel.useStdIn()
-                ? forkChannel.bindCommandReader( commandReader, streams.getStdInChannel() )
-                : forkChannel.bindCommandReader( commandReader );
+            in = forkChannel.bindCommandReader( commandReader, streams.getStdInChannel() );
             in.start();
 
             StreamConsumer stdErrConsumer = new NativeStdErrStreamConsumer( reporter );
 
-            out = forkChannel.useStdOut()
-                ? forkChannel.bindEventHandler( eventConsumer, streams.getStdOutChannel(), countdownCloseable )
-                : forkChannel.bindEventHandler( stdErrConsumer );
+            out = forkChannel.bindEventHandler( eventConsumer, countdownCloseable, streams.getStdOutChannel() );
             out.start();
 
             err = new LineConsumerThread( "std-err-fork-" + forkNumber, streams.getStdErrChannel(),

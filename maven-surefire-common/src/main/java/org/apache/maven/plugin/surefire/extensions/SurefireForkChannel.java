@@ -89,12 +89,6 @@ final class SurefireForkChannel extends ForkChannel
     }
 
     @Override
-    public boolean useStdIn()
-    {
-        return false;
-    }
-
-    @Override
     public boolean useStdOut()
     {
         return false;
@@ -102,29 +96,16 @@ final class SurefireForkChannel extends ForkChannel
 
     @Override
     public CloseableDaemonThread bindCommandReader( @Nonnull CommandReader commands,
-                                                    @Nonnull WritableByteChannel stdIn )
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CloseableDaemonThread bindCommandReader( @Nonnull CommandReader commands )
+                                                    WritableByteChannel stdIn )
     {
         return new StreamFeeder( "commands-fork-" + getForkChannelId(), channel, commands );
     }
 
     @Override
     public CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer,
-                                                   @Nonnull ReadableByteChannel stdOut,
-                                                   @Nonnull CountdownCloseable countdownCloseable )
+                                                   @Nonnull CountdownCloseable countdownCloseable,
+                                                   ReadableByteChannel stdOut )
     {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer )
-    {
-        CountdownCloseable countdownCloseable = new CountdownCloseable( null, 0 );
         return new LineConsumerThread( "events-fork-" + getForkChannelId(), channel, consumer, countdownCloseable );
     }
 

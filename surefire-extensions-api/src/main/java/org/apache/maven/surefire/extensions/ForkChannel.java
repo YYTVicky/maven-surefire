@@ -61,23 +61,13 @@ public abstract class ForkChannel implements Closeable
     public abstract String getForkNodeConnectionString();
 
     /**
-     * Determines which one of the two <em>bindCommandReader-s</em> to call in <em>ForkStarter</em>.
-     * Can be called anytime.
-     *
-     * @return If {@code true}, calling {@link #bindCommandReader(CommandReader, WritableByteChannel)} by
-     * <em>ForkStarter</em> and {@link #bindCommandReader(CommandReader)} throws {@link UnsupportedOperationException}.
-     * If {@code false}, then opposite.
-     */
-    public abstract boolean useStdIn();
-
-    /**
      * Determines which one of the two <em>bindEventHandler-s</em> to call in <em>ForkStarter</em>.
      * Can be called anytime.
      *
-     * @return If {@code true}, the {@link #bindEventHandler(StreamConsumer, ReadableByteChannel, CountdownCloseable)}
-     * is called in <em>ForkStarter</em> and {@link #bindEventHandler(StreamConsumer)} throws
-     * {@link UnsupportedOperationException}.
-     * If {@code false}, then opposite.
+     * @return If {@code true}, both {@link ReadableByteChannel} and {@link CountdownCloseable} must not be null
+     * in {@link #bindEventHandler(StreamConsumer, CountdownCloseable, ReadableByteChannel)}. If {@code false} then
+     * both {@link ReadableByteChannel} and {@link CountdownCloseable} have to be null
+     * in {@link #bindEventHandler(StreamConsumer, CountdownCloseable, ReadableByteChannel)}.
      */
     public abstract boolean useStdOut();
 
@@ -85,45 +75,25 @@ public abstract class ForkChannel implements Closeable
      * Binds command handler to the channel.
      *
      * @param commands command reader, see {@link CommandReader#readNextCommand()}
-     * @param stdIn    the standard input stream of the JVM to write the encoded commands into it
+     * @param stdIn    optional standard input stream of the JVM to write the encoded commands into it
      * @return the thread instance to start up in order to stream out the data
      * @throws IOException if an error in the fork channel
      */
     public abstract CloseableDaemonThread bindCommandReader( @Nonnull CommandReader commands,
-                                                             @Nonnull WritableByteChannel stdIn )
-        throws IOException;
-
-    /**
-     * Binds command handler to the channel.
-     *
-     * @param commands command reader, see {@link CommandReader#readNextCommand()}
-     * @return the thread instance to start up in order to stream out the data
-     * @throws IOException if an error in the fork channel
-     */
-    public abstract CloseableDaemonThread bindCommandReader( @Nonnull CommandReader commands )
+                                                             WritableByteChannel stdIn )
         throws IOException;
 
     /**
      *
      * @param consumer           event consumer
-     * @param stdOut             the standard output stream of the JVM
      * @param countdownCloseable count down of the final call of {@link Closeable#close()}
+     * @param stdOut             optional standard output stream of the JVM
      * @return the thread instance to start up in order to stream out the data
      * @throws IOException if an error in the fork channel
      */
     public abstract CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer,
-                                                            @Nonnull ReadableByteChannel stdOut,
-                                                            @Nonnull CountdownCloseable countdownCloseable )
-        throws IOException;
-
-    /**
-     * Binds event handler to the channel.
-     *
-     * @param consumer event consumer
-     * @return the thread instance to start up in order to stream out the data
-     * @throws IOException if an error in the fork channel
-     */
-    public abstract CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer )
+                                                            @Nonnull CountdownCloseable countdownCloseable,
+                                                            ReadableByteChannel stdOut )
         throws IOException;
 
     /**

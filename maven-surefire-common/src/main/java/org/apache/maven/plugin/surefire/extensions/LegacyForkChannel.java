@@ -53,12 +53,6 @@ final class LegacyForkChannel extends ForkChannel
     }
 
     @Override
-    public boolean useStdIn()
-    {
-        return true;
-    }
-
-    @Override
     public boolean useStdOut()
     {
         return true;
@@ -66,29 +60,17 @@ final class LegacyForkChannel extends ForkChannel
 
     @Override
     public CloseableDaemonThread bindCommandReader( @Nonnull CommandReader commands,
-                                                    @Nonnull WritableByteChannel stdIn )
+                                                    WritableByteChannel stdIn )
     {
         return new StreamFeeder( "std-in-fork-" + getForkChannelId(), stdIn, commands );
     }
 
     @Override
-    public CloseableDaemonThread bindCommandReader( @Nonnull CommandReader commands )
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer,
-                                                   @Nonnull ReadableByteChannel stdOut,
-                                                   @Nonnull CountdownCloseable countdownCloseable )
+                                                   @Nonnull CountdownCloseable countdownCloseable,
+                                                   ReadableByteChannel stdOut )
     {
         return new LineConsumerThread( "std-out-fork-" + getForkChannelId(), stdOut, consumer, countdownCloseable );
-    }
-
-    @Override
-    public CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer )
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override

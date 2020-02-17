@@ -22,9 +22,11 @@ package org.apache.maven.surefire.extensions;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream.TestLessInputStreamBuilder;
 import org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory;
+import org.apache.maven.surefire.extensions.util.CountdownCloseable;
 import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.junit.Test;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
@@ -54,9 +56,6 @@ public class ForkChannelTest
             assertThat( channel.getForkChannelId() )
                 .isEqualTo( 1 );
 
-            assertThat( channel.useStdIn() )
-                .isFalse();
-
             assertThat( channel.useStdOut() )
                 .isFalse();
 
@@ -79,8 +78,20 @@ public class ForkChannelTest
 
             TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
             TestLessInputStream commandReader = builder.build();
-            channel.bindCommandReader( commandReader ).start();
-            channel.bindEventHandler( consumer ).start();
+
+            channel.bindCommandReader( commandReader, null ).start();
+
+            final AtomicBoolean isCloseableCalled = new AtomicBoolean();
+            Closeable closeable = new Closeable()
+            {
+                @Override
+                public void close()
+                {
+                    isCloseableCalled.set( true );
+                }
+            };
+            CountdownCloseable cc = new CountdownCloseable( closeable, 1 );
+            channel.bindEventHandler( consumer, cc, null ).start();
 
             SECONDS.sleep( 3L );
 
@@ -92,6 +103,9 @@ public class ForkChannelTest
 
             assertThat( hasError.get() )
                 .isFalse();
+
+            assertThat( isCloseableCalled.get() )
+                .isTrue();
 
             assertThat( consumer.lines )
                 .hasSize( 1 )
