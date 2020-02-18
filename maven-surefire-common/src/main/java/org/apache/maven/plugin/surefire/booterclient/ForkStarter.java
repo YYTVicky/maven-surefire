@@ -34,6 +34,7 @@ import org.apache.maven.plugin.surefire.booterclient.output.ThreadedStreamConsum
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactory;
 import org.apache.maven.surefire.extensions.CloseableDaemonThread;
+import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.extensions.util.CommandlineExecutor;
 import org.apache.maven.surefire.extensions.util.CommandlineStreams;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
@@ -50,7 +51,6 @@ import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import org.apache.maven.surefire.extensions.util.LineConsumerThread;
 import org.apache.maven.surefire.providerapi.SurefireProvider;
 import org.apache.maven.surefire.report.StackTraceWriter;
-import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.apache.maven.surefire.suite.RunResult;
 import org.apache.maven.surefire.testset.TestRequest;
 import org.apache.maven.surefire.util.DefaultScanResult;
@@ -639,7 +639,7 @@ public class ForkStarter
             in = forkChannel.bindCommandReader( commandReader, streams.getStdInChannel() );
             in.start();
 
-            StreamConsumer stdErrConsumer = new NativeStdErrStreamConsumer( reporter );
+            EventHandler stdErrConsumer = new NativeStdErrStreamConsumer( reporter );
 
             out = forkChannel.bindEventHandler( eventConsumer, countdownCloseable, streams.getStdOutChannel() );
             out.start();

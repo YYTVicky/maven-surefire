@@ -85,7 +85,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
-        client.consumeLine( null );
+        client.handleEvent( null );
         assertThat( client.isSaidGoodBye() )
                 .isFalse();
         assertThat( client.getErrorInFork() )
@@ -113,7 +113,7 @@ public class ForkClientTest
         AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
-        client.consumeLine( "   " );
+        client.handleEvent( "   " );
         assertThat( client.isSaidGoodBye() )
                 .isFalse();
         assertThat( client.getErrorInFork() )

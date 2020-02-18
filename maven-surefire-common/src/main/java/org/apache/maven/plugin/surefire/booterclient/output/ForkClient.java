@@ -22,8 +22,8 @@ package org.apache.maven.plugin.surefire.booterclient.output;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.NotifiableTestStream;
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactory;
+import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
-import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.apache.maven.surefire.report.ConsoleOutputReceiver;
 import org.apache.maven.surefire.report.ReportEntry;
 import org.apache.maven.surefire.report.RunListener;
@@ -31,6 +31,7 @@ import org.apache.maven.surefire.report.RunMode;
 import org.apache.maven.surefire.report.StackTraceWriter;
 import org.apache.maven.surefire.report.TestSetReportEntry;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +60,7 @@ import static org.apache.maven.surefire.shared.utils.StringUtils.isNotBlank;
  * @author Kristian Rosenvold
  */
 public class ForkClient
-     implements StreamConsumer
+    implements EventHandler
 {
     private static final String PRINTABLE_JVM_NATIVE_STREAM = "Listening for transport dt_socket at address:";
     private static final long START_TIME_ZERO = 0L;
@@ -168,7 +169,7 @@ public class ForkClient
         }
     }
 
-    private final class TestStartingListener implements ForkedProcessReportEventListener
+    private final class TestStartingListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         @Override
         public void handle( RunMode runMode, ReportEntry reportEntry )
@@ -178,7 +179,7 @@ public class ForkClient
         }
     }
 
-    private final class TestSucceededListener implements ForkedProcessReportEventListener
+    private final class TestSucceededListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         @Override
         public void handle( RunMode runMode, ReportEntry reportEntry )
@@ -188,7 +189,7 @@ public class ForkClient
         }
     }
 
-    private final class TestFailedListener implements ForkedProcessReportEventListener
+    private final class TestFailedListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         @Override
         public void handle( RunMode runMode, ReportEntry reportEntry )
@@ -198,7 +199,7 @@ public class ForkClient
         }
     }
 
-    private final class TestSkippedListener implements ForkedProcessReportEventListener
+    private final class TestSkippedListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         @Override
         public void handle( RunMode runMode, ReportEntry reportEntry )
@@ -208,7 +209,7 @@ public class ForkClient
         }
     }
 
-    private final class TestErrorListener implements ForkedProcessReportEventListener
+    private final class TestErrorListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         @Override
         public void handle( RunMode runMode, ReportEntry reportEntry )
@@ -218,7 +219,7 @@ public class ForkClient
         }
     }
 
-    private final class TestAssumptionFailureListener implements ForkedProcessReportEventListener
+    private final class TestAssumptionFailureListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         @Override
         public void handle( RunMode runMode, ReportEntry reportEntry )
@@ -373,11 +374,11 @@ public class ForkClient
     }
 
     @Override
-    public final void consumeLine( String s )
+    public final void handleEvent( @Nonnull String event )
     {
-        if ( isNotBlank( s ) )
+        if ( isNotBlank( event ) )
         {
-            processLine( s );
+            processLine( event );
         }
     }
 
@@ -472,7 +473,7 @@ public class ForkClient
             BufferedReader stringReader = new BufferedReader( new StringReader( s ) );
             for ( String s1 = stringReader.readLine(); s1 != null; s1 = stringReader.readLine() )
             {
-                consumeLine( s1 );
+                handleEvent( s1 );
             }
         }
     }

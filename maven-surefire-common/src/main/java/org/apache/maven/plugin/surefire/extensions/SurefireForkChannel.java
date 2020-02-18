@@ -21,11 +21,11 @@ package org.apache.maven.plugin.surefire.extensions;
 
 import org.apache.maven.surefire.extensions.CloseableDaemonThread;
 import org.apache.maven.surefire.extensions.CommandReader;
+import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.extensions.ForkChannel;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
 import org.apache.maven.surefire.extensions.util.LineConsumerThread;
 import org.apache.maven.surefire.extensions.util.StreamFeeder;
-import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -102,11 +102,13 @@ final class SurefireForkChannel extends ForkChannel
     }
 
     @Override
-    public CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer,
+    public CloseableDaemonThread bindEventHandler( @Nonnull EventHandler eventHandler,
                                                    @Nonnull CountdownCloseable countdownCloseable,
                                                    ReadableByteChannel stdOut )
     {
-        return new LineConsumerThread( "events-fork-" + getForkChannelId(), channel, consumer, countdownCloseable );
+        // todo develop Event and EventConsumerThread, see the algorithm in ForkedChannelDecoder#handleEvent()
+        return new LineConsumerThread( "events-fork-" + getForkChannelId(), channel,
+            eventHandler, countdownCloseable );
     }
 
     @Override

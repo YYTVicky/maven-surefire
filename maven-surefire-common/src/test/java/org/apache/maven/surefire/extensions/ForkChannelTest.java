@@ -23,9 +23,9 @@ import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessIn
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream.TestLessInputStreamBuilder;
 import org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
-import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
@@ -113,12 +113,12 @@ public class ForkChannelTest
         }
     }
 
-    private static class Consumer implements StreamConsumer
+    private static class Consumer implements EventHandler
     {
         final Queue<String> lines = new ConcurrentLinkedQueue<>();
 
         @Override
-        public void consumeLine( String s )
+        public void handleEvent( @Nonnull String s )
         {
             lines.add( s );
         }

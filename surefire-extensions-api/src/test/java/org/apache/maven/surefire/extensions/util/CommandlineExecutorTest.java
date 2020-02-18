@@ -21,8 +21,8 @@ package org.apache.maven.surefire.extensions.util;
 
 import org.apache.maven.surefire.booter.Command;
 import org.apache.maven.surefire.extensions.CommandReader;
+import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.shared.utils.cli.Commandline;
-import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -90,7 +90,7 @@ public class CommandlineExecutorTest
         CountdownCloseable countdownCloseable = new CountdownCloseable( closer, 1 );
         exec = new CommandlineExecutor( cli, countdownCloseable );
         streams = exec.execute();
-        StreamConsumer consumer = mock( StreamConsumer.class );
+        EventHandler consumer = mock( EventHandler.class );
         CommandReader commandReader = new CommandReader()
         {
             @Override
@@ -123,6 +123,6 @@ public class CommandlineExecutorTest
         out.start();
         exec.awaitExit();
         verify( consumer )
-            .consumeLine( contains( "a.txt" ) );
+            .handleEvent( contains( "a.txt" ) );
     }
 }

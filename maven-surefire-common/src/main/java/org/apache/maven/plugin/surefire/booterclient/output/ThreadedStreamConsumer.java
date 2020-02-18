@@ -38,7 +38,7 @@ import static java.lang.Thread.currentThread;
  * @author Kristian Rosenvold
  */
 public final class ThreadedStreamConsumer
-        implements EventHandler, StreamConsumer, Closeable
+        implements EventHandler, Closeable
 {
     private static final String END_ITEM = "";
 
@@ -55,17 +55,17 @@ public final class ThreadedStreamConsumer
     final class Pumper
             implements Runnable
     {
-        private final StreamConsumer target;
+        private final EventHandler target;
 
         private final MultipleFailureException errors = new MultipleFailureException();
 
-        Pumper( StreamConsumer target )
+        Pumper( EventHandler target )
         {
             this.target = target;
         }
 
         /**
-         * Calls {@link ForkClient#consumeLine(String)} which may throw any {@link RuntimeException}.<br>
+         * Calls {@link ForkClient#handleEvent(String)} which may throw any {@link RuntimeException}.<br>
          * Even if {@link ForkClient} is not fault-tolerant, this method MUST be fault-tolerant and thus the
          * try-catch block must be inside of the loop which prevents from loosing events from {@link StreamConsumer}.
          * <br>
@@ -87,7 +87,7 @@ public final class ThreadedStreamConsumer
                     {
                         return;
                     }
-                    target.consumeLine( item );
+                    target.handleEvent( item );
                 }
                 catch ( Throwable t )
                 {
@@ -107,7 +107,7 @@ public final class ThreadedStreamConsumer
         }
     }
 
-    public ThreadedStreamConsumer( StreamConsumer target )
+    public ThreadedStreamConsumer( EventHandler target )
     {
         pumper = new Pumper( target );
         thread = DaemonThreadFactory.newDaemonThread( pumper, "ThreadedStreamConsumer" );
@@ -115,14 +115,8 @@ public final class ThreadedStreamConsumer
     }
 
     @Override
-    // todo remove this method and use object instead of string
+    // todo use object instead of string
     public void handleEvent( @Nonnull String event )
-    {
-        consumeLine( event );
-    }
-
-    @Override
-    public void consumeLine( @Nonnull String s )
     {
         if ( stop.get() )
         {
@@ -136,7 +130,7 @@ public final class ThreadedStreamConsumer
 
         try
         {
-            items.put( s );
+            items.put( event );
         }
         catch ( InterruptedException e )
         {

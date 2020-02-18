@@ -20,7 +20,6 @@ package org.apache.maven.surefire.extensions;
  */
 
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
-import org.apache.maven.surefire.shared.utils.cli.StreamConsumer;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
@@ -65,9 +64,9 @@ public abstract class ForkChannel implements Closeable
      * Can be called anytime.
      *
      * @return If {@code true}, both {@link ReadableByteChannel} and {@link CountdownCloseable} must not be null
-     * in {@link #bindEventHandler(StreamConsumer, CountdownCloseable, ReadableByteChannel)}. If {@code false} then
+     * in {@link #bindEventHandler(EventHandler, CountdownCloseable, ReadableByteChannel)}. If {@code false} then
      * both {@link ReadableByteChannel} and {@link CountdownCloseable} have to be null
-     * in {@link #bindEventHandler(StreamConsumer, CountdownCloseable, ReadableByteChannel)}.
+     * in {@link #bindEventHandler(EventHandler, CountdownCloseable, ReadableByteChannel)}.
      */
     public abstract boolean useStdOut();
 
@@ -85,13 +84,13 @@ public abstract class ForkChannel implements Closeable
 
     /**
      *
-     * @param consumer           event consumer
+     * @param eventHandler       event eventHandler
      * @param countdownCloseable count down of the final call of {@link Closeable#close()}
      * @param stdOut             optional standard output stream of the JVM
      * @return the thread instance to start up in order to stream out the data
      * @throws IOException if an error in the fork channel
      */
-    public abstract CloseableDaemonThread bindEventHandler( @Nonnull StreamConsumer consumer,
+    public abstract CloseableDaemonThread bindEventHandler( @Nonnull EventHandler eventHandler,
                                                             @Nonnull CountdownCloseable countdownCloseable,
                                                             ReadableByteChannel stdOut )
         throws IOException;
