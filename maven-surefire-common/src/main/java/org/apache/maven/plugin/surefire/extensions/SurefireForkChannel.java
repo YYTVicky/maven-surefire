@@ -52,8 +52,8 @@ final class SurefireForkChannel extends ForkChannel
     private static final byte[] LOCAL_LOOPBACK_IP_ADDRESS = new byte[]{127, 0, 0, 1};
 
     private final ServerSocketChannel server;
-    private final int serverPort;
-    private SocketChannel channel;
+    private final int localPort;
+    private volatile SocketChannel channel;
 
     SurefireForkChannel( int forkChannelId ) throws IOException
     {
@@ -62,7 +62,7 @@ final class SurefireForkChannel extends ForkChannel
         setTrueOptions( SO_REUSEADDR, TCP_NODELAY, SO_KEEPALIVE );
         InetAddress ip = Inet4Address.getByAddress( LOCAL_LOOPBACK_IP_ADDRESS );
         server.bind( new InetSocketAddress( ip, 0 ), 1 );
-        serverPort = ( (InetSocketAddress) server.getLocalAddress() ).getPort();
+        localPort = ( (InetSocketAddress) server.getLocalAddress() ).getPort();
     }
 
     @Override
@@ -90,7 +90,7 @@ final class SurefireForkChannel extends ForkChannel
     @Override
     public String getForkNodeConnectionString()
     {
-        return "tcp://127.0.0.1:" + serverPort;
+        return "tcp://127.0.0.1:" + localPort;
     }
 
     @Override
