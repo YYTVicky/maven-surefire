@@ -29,6 +29,8 @@ import org.apache.maven.surefire.extensions.util.StreamFeeder;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.Channel;
@@ -47,6 +49,8 @@ import static java.nio.channels.ServerSocketChannel.open;
  */
 final class SurefireForkChannel extends ForkChannel
 {
+    private static final byte[] LOCAL_LOOPBACK_IP_ADDRESS = new byte[]{127, 0, 0, 1};
+
     private final ServerSocketChannel server;
     private final int serverPort;
     private SocketChannel channel;
@@ -56,7 +60,8 @@ final class SurefireForkChannel extends ForkChannel
         super( forkChannelId );
         server = open();
         setTrueOptions( SO_REUSEADDR, TCP_NODELAY, SO_KEEPALIVE );
-        server.bind( new InetSocketAddress( 0 ) );
+        InetAddress ip = Inet4Address.getByAddress( LOCAL_LOOPBACK_IP_ADDRESS );
+        server.bind( new InetSocketAddress( ip, 0 ), 1 );
         serverPort = ( (InetSocketAddress) server.getLocalAddress() ).getPort();
     }
 
