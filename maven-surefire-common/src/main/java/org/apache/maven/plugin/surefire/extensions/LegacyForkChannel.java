@@ -71,7 +71,7 @@ final class LegacyForkChannel extends ForkChannel
                                                    ReadableByteChannel stdOut )
     {
         // todo develop Event and EventConsumerThread, see the algorithm in ForkedChannelDecoder#handleEvent()
-        return new LineConsumerThread( "std-out-fork-" + getForkChannelId(), stdOut,
+        return new LineConsumerThread( "fork-" + getForkChannelId() + "-event-thread-", stdOut,
             eventHandler, countdownCloseable );
     }
 

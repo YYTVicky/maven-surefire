@@ -577,7 +577,8 @@ public class ForkStarter
             Long pluginPid = forkConfiguration.getPluginPlatform().getPluginPid();
             log.debug( "Determined Maven Process ID " + pluginPid );
             String connectionString = forkChannel.getForkNodeConnectionString();
-            log.debug( "Fork Channel [" + forkNumber + "] connection string " + connectionString );
+            log.debug( "Fork Channel [" + forkNumber + "] connection string '" + connectionString
+                + "' for the implementation " + forkChannel.getClass() );
             surefireProperties = booterSerializer.serialize( providerProperties, providerConfiguration,
                     startupConfiguration, testSet, readTestsFromInStream, pluginPid, forkNumber, connectionString );
 
@@ -635,16 +636,16 @@ public class ForkStarter
             closer.addCloseable( streams );
 
             forkChannel.connectToClient();
+            log.debug( "Fork Channel [" + forkNumber + "] connected to the client." );
 
             in = forkChannel.bindCommandReader( commandReader, streams.getStdInChannel() );
             in.start();
 
-            EventHandler stdErrConsumer = new NativeStdErrStreamConsumer( reporter );
-
             out = forkChannel.bindEventHandler( eventConsumer, countdownCloseable, streams.getStdOutChannel() );
             out.start();
 
-            err = new LineConsumerThread( "std-err-fork-" + forkNumber, streams.getStdErrChannel(),
+            EventHandler stdErrConsumer = new NativeStdErrStreamConsumer( reporter );
+            err = new LineConsumerThread( "fork-" + forkNumber + "-err-thread-", streams.getStdErrChannel(),
                 stdErrConsumer, countdownCloseable );
             err.start();
 
@@ -662,6 +663,7 @@ public class ForkStarter
         }
         catch ( InterruptedException e )
         {
+            log.error( "Closing the streams after (InterruptedException) '" + e.getLocalizedMessage() + "'" );
             // maybe implement it in the Future.cancel() of the extension or similar
             in.disable();
             out.disable();
@@ -678,6 +680,8 @@ public class ForkStarter
         }
         finally
         {
+            log.debug( "Closing the fork " + forkNumber + " after "
+                + ( forkClient.isSaidGoodBye() ? "saying GoodBye." : "not saying Good Bye." ) );
             currentForkClients.remove( forkClient );
             try
             {

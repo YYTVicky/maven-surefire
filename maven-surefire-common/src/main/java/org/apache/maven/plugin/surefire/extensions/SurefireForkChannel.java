@@ -112,7 +112,7 @@ final class SurefireForkChannel extends ForkChannel
                                                    ReadableByteChannel stdOut )
     {
         // todo develop Event and EventConsumerThread, see the algorithm in ForkedChannelDecoder#handleEvent()
-        return new LineConsumerThread( "events-fork-" + getForkChannelId(), channel,
+        return new LineConsumerThread( "fork-" + getForkChannelId() + "-event-thread-", channel,
             eventHandler, countdownCloseable );
     }
 
