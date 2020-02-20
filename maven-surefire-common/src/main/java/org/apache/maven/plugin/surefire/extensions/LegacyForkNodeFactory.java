@@ -26,7 +26,7 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
 /**
- *
+ * The factory of {@link LegacyForkChannel}.
  */
 public class LegacyForkNodeFactory implements ForkNodeFactory
 {

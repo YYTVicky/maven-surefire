@@ -32,7 +32,12 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
 /**
- *
+ * The main purpose of this class is to bind the
+ * {@link #bindCommandReader(CommandReader, WritableByteChannel) command reader} reading the commands from
+ * {@link CommandReader}, serializing them and writing the stream to the
+ * {@link WritableByteChannel sub-process}. It binds the
+ * {@link #bindEventHandler(EventHandler, CountdownCloseable, ReadableByteChannel) event handler} deserializing
+ * a received event and sends the event object to the {@link EventHandler event handler}.
  */
 final class LegacyForkChannel extends ForkChannel
 {

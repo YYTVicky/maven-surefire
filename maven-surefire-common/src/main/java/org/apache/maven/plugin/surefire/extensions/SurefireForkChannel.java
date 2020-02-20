@@ -45,7 +45,18 @@ import static java.net.StandardSocketOptions.TCP_NODELAY;
 import static java.nio.channels.ServerSocketChannel.open;
 
 /**
- *
+ * The TCP/IP server accepting only one client connection. The forked JVM connects to the server using the
+ * {@link #getForkNodeConnectionString() connection string}.
+ * The main purpose of this class is to {@link #connectToClient() conect with tthe client}, bind the
+ * {@link #bindCommandReader(CommandReader, WritableByteChannel) command reader} to the internal socket's
+ * {@link java.io.InputStream}, and bind the
+ * {@link #bindEventHandler(EventHandler, CountdownCloseable, ReadableByteChannel) event handler} writing the event
+ * objects to the {@link EventHandler event handler}.
+ * <br>
+ * The objects {@link WritableByteChannel} and {@link ReadableByteChannel} are forked process streams
+ * (standard input and output). Both are ignored in this implementation but they are used in {@link LegacyForkChannel}.
+ * <br>
+ * The channel is closed after the forked JVM has finished normally or the shutdown hook is executed in the plugin.
  */
 final class SurefireForkChannel extends ForkChannel
 {

@@ -24,6 +24,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
+ * This is the plugin extension as a factory of {@link ForkChannel}.
+ *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
  * @since 3.0.0-M5
  */
