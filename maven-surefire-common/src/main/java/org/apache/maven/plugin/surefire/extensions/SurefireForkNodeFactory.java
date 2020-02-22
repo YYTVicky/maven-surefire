@@ -25,7 +25,6 @@ import org.apache.maven.surefire.extensions.ForkNodeFactory;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.nio.channels.ReadableByteChannel;
 
 /**
  * The factory of {@link SurefireForkChannel}.
