@@ -90,7 +90,8 @@ public class CommandlineExecutorTest
         CountdownCloseable countdownCloseable = new CountdownCloseable( closer, 1 );
         exec = new CommandlineExecutor( cli, countdownCloseable );
         streams = exec.execute();
-        EventHandler consumer = mock( EventHandler.class );
+        @SuppressWarnings( "unchecked" )
+        EventHandler<String> consumer = mock( EventHandler.class );
         CommandReader commandReader = new CommandReader()
         {
             @Override

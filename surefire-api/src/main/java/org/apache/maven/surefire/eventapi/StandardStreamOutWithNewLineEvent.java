@@ -1,4 +1,4 @@
-package org.apache.maven.plugin.surefire.booterclient.output;
+package org.apache.maven.surefire.eventapi;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,11 +19,19 @@ package org.apache.maven.plugin.surefire.booterclient.output;
  * under the License.
  */
 
+import org.apache.maven.surefire.report.RunMode;
+
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STDOUT_NEW_LINE;
+
 /**
- * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
- * @since 3.0.0-M4
+ * The event of standard output stream with new line.
+ *
+ * @since 3.0.0-M5
  */
-public interface ForkedChannelDecoderErrorHandler
+public final class StandardStreamOutWithNewLineEvent extends AbstractStandardStreamEvent
 {
-    void handledError( String line, Throwable e );
+    public StandardStreamOutWithNewLineEvent( RunMode runMode, String message )
+    {
+        super( BOOTERCODE_STDOUT_NEW_LINE, runMode, message );
+    }
 }

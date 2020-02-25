@@ -1,4 +1,4 @@
-package org.apache.maven.plugin.surefire.extensions;
+package org.apache.maven.surefire.eventapi;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,23 +19,17 @@ package org.apache.maven.plugin.surefire.extensions;
  * under the License.
  */
 
-import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
-import org.apache.maven.surefire.extensions.ForkChannel;
-import org.apache.maven.surefire.extensions.ForkNodeFactory;
-
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_CONSOLE_INFO;
 
 /**
- * The factory of {@link SurefireForkChannel}.
+ * The event with a message for console info level.
+ *
+ * @since 3.0.0-M5
  */
-public class SurefireForkNodeFactory implements ForkNodeFactory
+public final class ConsoleInfoEvent extends AbstractConsoleEvent
 {
-    @Nonnull
-    @Override
-    public ForkChannel createForkChannel( @Nonnegative int forkChannelId, ConsoleLogger logger ) throws IOException
+    public ConsoleInfoEvent( String message )
     {
-        return new SurefireForkChannel( forkChannelId, logger );
+        super( BOOTERCODE_CONSOLE_INFO, message );
     }
 }

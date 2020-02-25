@@ -40,7 +40,7 @@ import org.apache.maven.plugin.surefire.booterclient.ModularClasspathForkConfigu
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStreamBuilderTest;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestProvidingInputStreamTest;
 import org.apache.maven.plugin.surefire.booterclient.output.ForkClientTest;
-import org.apache.maven.plugin.surefire.booterclient.output.ForkedChannelDecoderTest;
+import org.apache.maven.plugin.surefire.booterclient.output.ForkedProcessEventObserverTest;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactoryTest;
 import org.apache.maven.plugin.surefire.report.StatelessXmlReporterTest;
 import org.apache.maven.plugin.surefire.report.TestSetStatsTest;
@@ -98,7 +98,7 @@ public class JUnit4SuiteTest extends TestCase
         suite.addTest( new JUnit4TestAdapter( ScannerUtilTest.class ) );
         suite.addTest( new JUnit4TestAdapter( MojoMocklessTest.class ) );
         suite.addTest( new JUnit4TestAdapter( ForkClientTest.class ) );
-        suite.addTest( new JUnit4TestAdapter( ForkedChannelDecoderTest.class ) );
+        suite.addTest( new JUnit4TestAdapter( ForkedProcessEventObserverTest.class ) );
         suite.addTest( new JUnit4TestAdapter( ConsoleOutputReporterTest.class ) );
         suite.addTest( new JUnit4TestAdapter( StatelessReporterTest.class ) );
         suite.addTest( new JUnit4TestAdapter( TestSetStatsTest.class ) );

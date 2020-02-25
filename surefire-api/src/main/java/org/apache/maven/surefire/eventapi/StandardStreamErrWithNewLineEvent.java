@@ -1,4 +1,4 @@
-package org.apache.maven.plugin.surefire.extensions;
+package org.apache.maven.surefire.eventapi;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,23 +19,19 @@ package org.apache.maven.plugin.surefire.extensions;
  * under the License.
  */
 
-import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
-import org.apache.maven.surefire.extensions.ForkChannel;
-import org.apache.maven.surefire.extensions.ForkNodeFactory;
+import org.apache.maven.surefire.report.RunMode;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STDERR_NEW_LINE;
 
 /**
- * The factory of {@link SurefireForkChannel}.
+ * The event of standard error stream with new line.
+ *
+ * @since 3.0.0-M5
  */
-public class SurefireForkNodeFactory implements ForkNodeFactory
+public final class StandardStreamErrWithNewLineEvent extends AbstractStandardStreamEvent
 {
-    @Nonnull
-    @Override
-    public ForkChannel createForkChannel( @Nonnegative int forkChannelId, ConsoleLogger logger ) throws IOException
+    public StandardStreamErrWithNewLineEvent( RunMode runMode, String message )
     {
-        return new SurefireForkChannel( forkChannelId, logger );
+        super( BOOTERCODE_STDERR_NEW_LINE, runMode, message );
     }
 }

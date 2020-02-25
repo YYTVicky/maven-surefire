@@ -28,7 +28,6 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -71,13 +70,13 @@ public class SurefireMasterProcessChannelProcessorFactory
     @Override
     public MasterProcessChannelDecoder createDecoder()
     {
-        return new LegacyMasterProcessChannelDecoder( Channels.newInputStream( channel ) );
+        return new LegacyMasterProcessChannelDecoder( channel );
     }
 
     @Override
     public MasterProcessChannelEncoder createEncoder()
     {
-        return new LegacyMasterProcessChannelEncoder( Channels.newOutputStream( channel ) );
+        return new LegacyMasterProcessChannelEncoder( channel );
     }
 
     @Override

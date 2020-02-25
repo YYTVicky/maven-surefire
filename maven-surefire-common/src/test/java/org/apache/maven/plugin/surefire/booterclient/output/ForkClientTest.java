@@ -32,7 +32,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.copyOfRange;
@@ -82,9 +81,7 @@ public class ForkClientTest
         DefaultReporterFactory factory = mock( DefaultReporterFactory.class );
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, null, 0 );
         client.handleEvent( null );
         assertThat( client.isSaidGoodBye() )
                 .isFalse();
@@ -110,9 +107,7 @@ public class ForkClientTest
         DefaultReporterFactory factory = mock( DefaultReporterFactory.class );
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, null, 0 );
         client.handleEvent( "   " );
         assertThat( client.isSaidGoodBye() )
                 .isFalse();
@@ -132,16 +127,13 @@ public class ForkClientTest
 
     @Test
     public void shouldNotFailOnEmptyInput3()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
         DefaultReporterFactory factory = mock( DefaultReporterFactory.class );
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, null, 0 );
         client.consumeMultiLineContent( null );
         assertThat( client.isSaidGoodBye() )
                 .isFalse();
@@ -161,18 +153,16 @@ public class ForkClientTest
 
     @Test
     public void shouldNotFailOnEmptyInput4()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
         DefaultReporterFactory factory = mock( DefaultReporterFactory.class );
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         when( logger.isDebugEnabled() )
                 .thenReturn( true );
-        ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, null, 0 );
         client.consumeMultiLineContent( "   " );
         verify( logger )
                 .isDebugEnabled();
@@ -200,18 +190,16 @@ public class ForkClientTest
 
     @Test
     public void shouldNotFailOnEmptyInput5()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
         DefaultReporterFactory factory = mock( DefaultReporterFactory.class );
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         when( logger.isDebugEnabled() )
                 .thenReturn( true );
-        ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, null, 0 );
         client.consumeMultiLineContent( "Listening for transport dt_socket at address: bla" );
         verify( logger )
                 .isDebugEnabled();
@@ -236,20 +224,18 @@ public class ForkClientTest
 
     @Test
     public void shouldNotFailOnEmptyInput6()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
         DefaultReporterFactory factory = mock( DefaultReporterFactory.class );
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
         ConsoleLogger logger = mock( ConsoleLogger.class );
         when( logger.isDebugEnabled() )
                 .thenReturn( false );
         when( logger.isInfoEnabled() )
                 .thenReturn( true );
-        ForkClient client = new ForkClient( factory, null, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, null, 0 );
         client.consumeMultiLineContent( "Listening for transport dt_socket at address: bla" );
         verify( logger )
                 .isDebugEnabled();
@@ -279,7 +265,7 @@ public class ForkClientTest
     {
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
 
-        ForkClient client = new ForkClient( null, notifiableTestStream, null, null, 0 );
+        ForkClient client = new ForkClient( null, notifiableTestStream, 0 );
         client.kill();
 
         verify( notifiableTestStream, times( 1 ) )
@@ -288,7 +274,6 @@ public class ForkClientTest
 
     @Test
     public void shouldAcquireNextTest()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -296,9 +281,7 @@ public class ForkClientTest
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:next-test\n" );
         verify( notifiableTestStream, times( 1 ) )
                 .provideNewTest();
@@ -322,7 +305,6 @@ public class ForkClientTest
 
     @Test
     public void shouldNotifyWithBye()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -330,10 +312,8 @@ public class ForkClientTest
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:bye\n" );
         client.kill();
 
@@ -361,7 +341,6 @@ public class ForkClientTest
 
     @Test
     public void shouldStopOnNextTest()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -369,10 +348,8 @@ public class ForkClientTest
         when( factory.getReportsDirectory() )
                 .thenReturn( new File( target, "surefire-reports" ) );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
         final boolean[] verified = {false};
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 )
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 )
         {
             @Override
             protected void stopOnNextTest()
@@ -404,7 +381,6 @@ public class ForkClientTest
 
     @Test
     public void shouldReceiveStdOut()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -415,9 +391,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:std-out-stream:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -449,7 +423,6 @@ public class ForkClientTest
 
     @Test
     public void shouldReceiveStdOutNewLine()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -460,9 +433,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:std-out-stream-new-line:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -494,7 +465,6 @@ public class ForkClientTest
 
     @Test
     public void shouldReceiveStdErr()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -505,9 +475,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:std-err-stream:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -539,7 +507,6 @@ public class ForkClientTest
 
     @Test
     public void shouldReceiveStdErrNewLine()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -550,9 +517,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:std-err-stream-new-line:normal-run:UTF-8:bXNn\n" );
         verifyZeroInteractions( notifiableTestStream );
         verify( factory, times( 1 ) )
@@ -584,7 +549,6 @@ public class ForkClientTest
 
     @Test
     public void shouldLogConsoleError()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -595,9 +559,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:console-error-log:UTF-8:"
                 + encodeBase64String( "Listening for transport dt_socket at address:".getBytes( UTF_8 ) )
                 + ":-:-:-" );
@@ -635,7 +597,6 @@ public class ForkClientTest
 
     @Test
     public void shouldLogConsoleErrorWithStackTrace()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -646,9 +607,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:console-error-log:UTF-8"
                 + ":" + encodeBase64String( "Listening for transport dt_socket at address:".getBytes( UTF_8 ) )
                 + ":" + encodeBase64String( "s1".getBytes( UTF_8 ) )
@@ -693,7 +652,6 @@ public class ForkClientTest
 
     @Test
     public void shouldLogConsoleWarning()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -704,11 +662,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        when( logger.isWarnEnabled() )
-                .thenReturn( true );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:console-warning-log:UTF-8:"
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
@@ -741,7 +695,6 @@ public class ForkClientTest
 
     @Test
     public void shouldLogConsoleDebug()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -752,11 +705,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        when( logger.isDebugEnabled() )
-                .thenReturn( true );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:console-debug-log:UTF-8:"
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
@@ -789,7 +738,6 @@ public class ForkClientTest
 
     @Test
     public void shouldLogConsoleInfo()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -800,9 +748,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:console-info-log:UTF-8:"
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
@@ -835,7 +781,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendSystemProperty()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -846,9 +791,7 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:sys-prop:normal-run:UTF-8:azE=:djE="
                 + encodeBase64String( "s1".getBytes( UTF_8 ) ) );
         verifyZeroInteractions( notifiableTestStream );
@@ -879,7 +822,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestsetStartingKilled()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -890,9 +832,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -927,7 +866,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:testset-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
@@ -1021,9 +960,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1062,7 +998,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:testset-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
@@ -1145,7 +1081,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestsetCompleted()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1156,9 +1091,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1193,7 +1125,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:testset-completed:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
@@ -1274,7 +1206,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestStarting()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1285,9 +1216,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1322,7 +1250,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
         client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
                 + ":"
@@ -1404,7 +1332,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestSucceeded()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1415,9 +1342,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1452,7 +1376,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream,  0 );
 
         client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
@@ -1546,7 +1470,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestFailed()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1557,9 +1480,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1594,7 +1514,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
 
         client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
@@ -1692,7 +1612,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestSkipped()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1703,9 +1622,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1740,7 +1656,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
 
         client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
@@ -1838,7 +1754,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestError()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1849,9 +1764,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -1888,7 +1800,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
 
         client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName
@@ -1984,7 +1896,6 @@ public class ForkClientTest
 
     @Test
     public void shouldSendTestAssumptionFailure()
-            throws IOException
     {
         String cwd = System.getProperty( "user.dir" );
         File target = new File( cwd, "target" );
@@ -1995,9 +1906,6 @@ public class ForkClientTest
         when( factory.createReporter() )
                 .thenReturn( receiver );
         NotifiableTestStream notifiableTestStream = mock( NotifiableTestStream.class );
-        AtomicBoolean printedErrorStream = new AtomicBoolean();
-        ConsoleLogger logger = mock( ConsoleLogger.class );
-
 
         final String exceptionMessage = "msg";
         final String encodedExceptionMsg = encodeBase64String( toArray( UTF_8.encode( exceptionMessage ) ) );
@@ -2034,7 +1942,7 @@ public class ForkClientTest
         String encodedGroup = encodeBase64String( toArray( UTF_8.encode( reportEntry.getGroup() ) ) );
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
-        ForkClient client = new ForkClient( factory, notifiableTestStream, logger, printedErrorStream, 0 );
+        ForkClient client = new ForkClient( factory, notifiableTestStream, 0 );
 
         client.consumeMultiLineContent( ":maven-surefire-event:test-starting:normal-run:UTF-8:"
                 + encodedSourceName

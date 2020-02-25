@@ -35,19 +35,19 @@ public final class LineConsumerThread extends CloseableDaemonThread
 {
     private final Charset encoding;
     private final ReadableByteChannel channel;
-    private final EventHandler eventHandler;
+    private final EventHandler<String> eventHandler;
     private final CountdownCloseable countdownCloseable;
     private volatile boolean disabled;
 
     public LineConsumerThread( @Nonnull String threadName,
-                               @Nonnull ReadableByteChannel channel, @Nonnull EventHandler eventHandler,
+                               @Nonnull ReadableByteChannel channel, @Nonnull EventHandler<String> eventHandler,
                                @Nonnull CountdownCloseable countdownCloseable )
     {
         this( threadName, channel, eventHandler, countdownCloseable, Charset.defaultCharset() );
     }
 
     public LineConsumerThread( @Nonnull String threadName,
-                               @Nonnull ReadableByteChannel channel, @Nonnull EventHandler eventHandler,
+                               @Nonnull ReadableByteChannel channel, @Nonnull EventHandler<String> eventHandler,
                                @Nonnull CountdownCloseable countdownCloseable, @Nonnull Charset encoding )
     {
         super( threadName );

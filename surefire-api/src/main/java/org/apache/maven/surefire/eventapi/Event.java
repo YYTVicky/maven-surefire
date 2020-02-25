@@ -1,4 +1,4 @@
-package org.apache.maven.surefire.extensions;
+package org.apache.maven.surefire.eventapi;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,27 +19,33 @@ package org.apache.maven.surefire.extensions;
  * under the License.
  */
 
-import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
-
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import org.apache.maven.surefire.booter.ForkedProcessEventType;
 
 /**
- * This is the plugin extension as a factory of {@link ForkChannel}.
+ * Super type of events.
  *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
  * @since 3.0.0-M5
  */
-public interface ForkNodeFactory
+public abstract class Event
 {
-    /**
-     * Opens and closes the channel.
-     *
-     * @param forkChannelId the ID of forked JVM
-     * @param logger the console logger
-     * @return specific implementation of the communication channel
-     * @throws IOException if cannot open the channel
-     */
-    @Nonnull ForkChannel createForkChannel( @Nonnegative int forkChannelId, ConsoleLogger logger ) throws IOException;
+    private final ForkedProcessEventType eventType;
+
+    public Event( ForkedProcessEventType eventType )
+    {
+        this.eventType = eventType;
+    }
+
+    public abstract boolean isControlCategory();
+    public abstract boolean isConsoleCategory();
+    public abstract boolean isConsoleErrorCategory();
+    public abstract boolean isStandardStreamCategory();
+    public abstract boolean isSysPropCategory();
+    public abstract boolean isTestCategory();
+    public abstract boolean isJvmExitError();
+
+    public final ForkedProcessEventType getEventType()
+    {
+        return eventType;
+    }
 }

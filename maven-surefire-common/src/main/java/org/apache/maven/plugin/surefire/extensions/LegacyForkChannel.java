@@ -19,12 +19,13 @@ package org.apache.maven.plugin.surefire.extensions;
  * under the License.
  */
 
+import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
+import org.apache.maven.surefire.eventapi.Event;
 import org.apache.maven.surefire.extensions.CloseableDaemonThread;
 import org.apache.maven.surefire.extensions.CommandReader;
 import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.extensions.ForkChannel;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
-import org.apache.maven.surefire.extensions.util.LineConsumerThread;
 import org.apache.maven.surefire.extensions.util.StreamFeeder;
 
 import javax.annotation.Nonnull;
@@ -41,9 +42,12 @@ import java.nio.channels.WritableByteChannel;
  */
 final class LegacyForkChannel extends ForkChannel
 {
-    protected LegacyForkChannel( int forkChannelId )
+    private final ConsoleLogger logger;
+
+    protected LegacyForkChannel( int forkChannelId, ConsoleLogger logger )
     {
         super( forkChannelId );
+        this.logger = logger;
     }
 
     @Override
@@ -71,13 +75,12 @@ final class LegacyForkChannel extends ForkChannel
     }
 
     @Override
-    public CloseableDaemonThread bindEventHandler( @Nonnull EventHandler eventHandler,
+    public CloseableDaemonThread bindEventHandler( @Nonnull EventHandler<Event> eventHandler,
                                                    @Nonnull CountdownCloseable countdownCloseable,
                                                    ReadableByteChannel stdOut )
     {
-        // todo develop Event and EventConsumerThread, see the algorithm in ForkedChannelDecoder#handleEvent()
-        return new LineConsumerThread( "fork-" + getForkChannelId() + "-event-thread-", stdOut,
-            eventHandler, countdownCloseable );
+        return new EventConsumerThread( "fork-" + getForkChannelId() + "-event-thread-", stdOut,
+            eventHandler, countdownCloseable, logger );
     }
 
     @Override

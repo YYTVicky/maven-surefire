@@ -22,6 +22,7 @@ package org.apache.maven.plugin.surefire.booterclient.output;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.NotifiableTestStream;
 import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactory;
+import org.apache.maven.surefire.eventapi.Event;
 import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
 import org.apache.maven.surefire.report.ConsoleOutputReceiver;
@@ -32,25 +33,19 @@ import org.apache.maven.surefire.report.StackTraceWriter;
 import org.apache.maven.surefire.report.TestSetReportEntry;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.unmodifiableMap;
 import static org.apache.maven.surefire.booter.Shutdown.KILL;
 import static org.apache.maven.surefire.report.CategorizedReportEntry.reportEntry;
-import static org.apache.maven.surefire.shared.utils.StringUtils.isBlank;
-import static org.apache.maven.surefire.shared.utils.StringUtils.isNotBlank;
 
 // todo move to the same package with ForkStarter
 
@@ -60,9 +55,8 @@ import static org.apache.maven.surefire.shared.utils.StringUtils.isNotBlank;
  * @author Kristian Rosenvold
  */
 public class ForkClient
-    implements EventHandler
+    implements EventHandler<Event>
 {
-    private static final String PRINTABLE_JVM_NATIVE_STREAM = "Listening for transport dt_socket at address:";
     private static final long START_TIME_ZERO = 0L;
     private static final long START_TIME_NEGATIVE_TIMEOUT = -1L;
 
@@ -80,21 +74,9 @@ public class ForkClient
      */
     private final AtomicLong testSetStartedAt = new AtomicLong( START_TIME_ZERO );
 
-    private final ForkedChannelDecoder decoder = new ForkedChannelDecoder();
-
-    private final ConsoleLogger log;
-
-    /**
-     * prevents from printing same warning
-     */
-    private final AtomicBoolean printedErrorStream;
+    private final ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
 
     private final int forkNumber;
-
-    /**
-     * Used by single Thread started by {@link ThreadedStreamConsumer} and therefore does not need to be volatile.
-     */
-    private final ForkedChannelDecoderErrorHandler errorHandler;
 
     private RunListener testSetReporter;
 
@@ -106,12 +88,10 @@ public class ForkClient
     private volatile StackTraceWriter errorInFork;
 
     public ForkClient( DefaultReporterFactory defaultReporterFactory, NotifiableTestStream notifiableTestStream,
-                       ConsoleLogger log, AtomicBoolean printedErrorStream, int forkNumber )
+                       int forkNumber )
     {
         this.defaultReporterFactory = defaultReporterFactory;
         this.notifiableTestStream = notifiableTestStream;
-        this.log = log;
-        this.printedErrorStream = printedErrorStream;
         this.forkNumber = forkNumber;
         decoder.setTestSetStartingListener( new TestSetStartingListener() );
         decoder.setTestSetCompletedListener( new TestSetCompletedListener() );
@@ -131,16 +111,6 @@ public class ForkClient
         decoder.setStopOnNextTestListener( new StopOnNextTestListener() );
         decoder.setConsoleDebugListener( new DebugListener() );
         decoder.setConsoleWarningListener( new WarningListener() );
-        errorHandler = new ErrorHandler();
-    }
-
-    private final class ErrorHandler implements ForkedChannelDecoderErrorHandler
-    {
-        @Override
-        public void handledError( String line, Throwable e )
-        {
-            logStreamWarning( line, e );
-        }
     }
 
     private final class TestSetStartingListener
@@ -278,18 +248,19 @@ public class ForkClient
     private class ErrorListener implements ForkedProcessStackTraceEventListener
     {
         @Override
-        public void handle( String msg, String smartStackTrace, String stackTrace )
+        public void handle( @Nonnull StackTraceWriter stackTrace )
         {
+            String msg = stackTrace.getThrowable().getMessage();
             if ( errorInFork == null )
             {
-                errorInFork = deserializeStackTraceWriter( msg, smartStackTrace, stackTrace );
+                errorInFork = stackTrace;
                 if ( msg != null )
                 {
                     getOrCreateConsoleLogger()
                             .error( msg );
                 }
             }
-            dumpToLoFile( msg, null );
+            dumpToLoFile( msg );
         }
     }
 
@@ -374,12 +345,9 @@ public class ForkClient
     }
 
     @Override
-    public final void handleEvent( @Nonnull String event )
+    public final void handleEvent( @Nonnull Event event )
     {
-        if ( isNotBlank( event ) )
-        {
-            processLine( event );
-        }
+        decoder.handleEvent( event );
     }
 
     private void setCurrentStartTime()
@@ -406,76 +374,17 @@ public class ForkClient
         return testSetReporter;
     }
 
-    private void processLine( String event )
-    {
-        decoder.handleEvent( event, errorHandler );
-    }
-
-    private File dumpToLoFile( String msg, Throwable e )
+    private void dumpToLoFile( String msg )
     {
         File reportsDir = defaultReporterFactory.getReportsDirectory();
         InPluginProcessDumpSingleton util = InPluginProcessDumpSingleton.getSingleton();
-        return e == null
-                ? util.dumpStreamText( msg, reportsDir, forkNumber )
-                : util.dumpStreamException( e, msg, reportsDir, forkNumber );
-    }
-
-    private void logStreamWarning( String event, Throwable e )
-    {
-        if ( event == null || !event.contains( PRINTABLE_JVM_NATIVE_STREAM ) )
-        {
-            String msg = "Corrupted STDOUT by directly writing to native stream in forked JVM " + forkNumber + ".";
-            File dump = dumpToLoFile( msg + " Stream '" + event + "'.", e );
-
-            if ( printedErrorStream.compareAndSet( false, true ) )
-            {
-                log.warning( msg + " See FAQ web page and the dump file " + dump.getAbsolutePath() );
-            }
-
-            if ( log.isDebugEnabled() && event != null )
-            {
-                log.debug( event );
-            }
-        }
-        else
-        {
-            if ( log.isDebugEnabled() )
-            {
-                log.debug( event );
-            }
-            else if ( log.isInfoEnabled() )
-            {
-                log.info( event );
-            }
-            else
-            {
-                // In case of debugging forked JVM, see PRINTABLE_JVM_NATIVE_STREAM.
-                System.out.println( event );
-            }
-        }
+        util.dumpStreamText( msg, reportsDir, forkNumber );
     }
 
     private void writeTestOutput( String output, boolean newLine, boolean isStdout )
     {
         getOrCreateConsoleOutputReceiver()
                 .writeTestOutput( output, newLine, isStdout );
-    }
-
-    public final void consumeMultiLineContent( String s )
-            throws IOException
-    {
-        if ( isBlank( s ) )
-        {
-            logStreamWarning( s, null );
-        }
-        else
-        {
-            BufferedReader stringReader = new BufferedReader( new StringReader( s ) );
-            for ( String s1 = stringReader.readLine(); s1 != null; s1 = stringReader.readLine() )
-            {
-                handleEvent( s1 );
-            }
-        }
     }
 
     public final Map<String, String> getTestVmSystemProperties()
@@ -532,12 +441,5 @@ public class ForkClient
     public boolean hasTestsInProgress()
     {
         return !testsInProgress.isEmpty();
-    }
-
-    private StackTraceWriter deserializeStackTraceWriter( String stackTraceMessage,
-                                                          String smartStackTrace, String stackTrace )
-    {
-        boolean hasTrace = stackTrace != null;
-        return hasTrace ? new DeserializedStacktraceWriter( stackTraceMessage, smartStackTrace, stackTrace ) : null;
     }
 }

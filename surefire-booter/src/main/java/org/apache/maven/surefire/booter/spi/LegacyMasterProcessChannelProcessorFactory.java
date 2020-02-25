@@ -26,6 +26,8 @@ import org.apache.maven.surefire.spi.MasterProcessChannelProcessorFactory;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import static java.nio.channels.Channels.newChannel;
+
 /**
  * Producer of encoder and decoder for process pipes.
  * <br>
@@ -54,13 +56,13 @@ public class LegacyMasterProcessChannelProcessorFactory
     @Override
     public MasterProcessChannelDecoder createDecoder()
     {
-        return new LegacyMasterProcessChannelDecoder( System.in );
+        return new LegacyMasterProcessChannelDecoder( newChannel( System.in ) );
     }
 
     @Override
     public MasterProcessChannelEncoder createEncoder()
     {
-        return new LegacyMasterProcessChannelEncoder( System.out );
+        return new LegacyMasterProcessChannelEncoder( newChannel( System.out ) );
     }
 
     @Override

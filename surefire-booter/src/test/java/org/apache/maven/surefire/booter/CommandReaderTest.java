@@ -34,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.channels.WritableByteChannel;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
@@ -43,6 +44,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static java.nio.channels.Channels.newChannel;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -89,7 +91,7 @@ public class CommandReaderTest
         InputStream realInputStream = new SystemInputStream();
         addTestToPipeline( getClass().getName() );
         ConsoleLogger logger = new NullConsoleLogger();
-        MasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( realInputStream );
+        MasterProcessChannelDecoder decoder = new LegacyMasterProcessChannelDecoder( newChannel( realInputStream ) );
         reader = new CommandReader( decoder, Shutdown.DEFAULT, logger );
     }
 
@@ -260,8 +262,8 @@ public class CommandReaderTest
         }
     }
 
-    private static PrintStream nul()
+    private static WritableByteChannel nul()
     {
-        return new PrintStream( new ByteArrayOutputStream() );
+        return newChannel( new PrintStream( new ByteArrayOutputStream() ) );
     }
 }

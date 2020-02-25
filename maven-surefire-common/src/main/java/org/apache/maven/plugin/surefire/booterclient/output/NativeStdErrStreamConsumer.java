@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
  * @see org.apache.maven.plugin.surefire.booterclient.ForkStarter
  */
 public final class NativeStdErrStreamConsumer
-    implements EventHandler
+    implements EventHandler<String>
 {
     private final DefaultReporterFactory defaultReporterFactory;
 

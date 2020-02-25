@@ -36,6 +36,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -46,30 +47,26 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Map;
 
+import static java.nio.channels.Channels.newChannel;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
-import static org.apache.maven.plugin.surefire.booterclient.output.ForkedChannelDecoder.toReportEntry;
+import static org.apache.maven.plugin.surefire.booterclient.output.ForkedProcessEventObserver.toReportEntry;
 import static org.apache.maven.surefire.report.RunMode.NORMAL_RUN;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.rules.ExpectedException.none;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.nullable;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Test for {@link ForkedChannelDecoder}.
+ * Test for {@link ForkedProcessEventObserver}.
  *
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
  * @since 3.0.0-M4
  */
 @RunWith( Enclosed.class )
-public class ForkedChannelDecoderTest
+public class ForkedProcessEventObserverTest
 {
     /**
      *
@@ -82,10 +79,10 @@ public class ForkedChannelDecoderTest
         @Test
         public void shouldBeFailSafe()
         {
-            assertThat( ForkedChannelDecoder.decode( null, UTF_8 ) ).isNull();
-            assertThat( ForkedChannelDecoder.decode( "-", UTF_8 ) ).isNull();
-            assertThat( ForkedChannelDecoder.decodeToInteger( null ) ).isNull();
-            assertThat( ForkedChannelDecoder.decodeToInteger( "-" ) ).isNull();
+            assertThat( ForkedProcessEventObserver.decode( null, UTF_8 ) ).isNull();
+            assertThat( ForkedProcessEventObserver.decode( "-", UTF_8 ) ).isNull();
+            assertThat( ForkedProcessEventObserver.decodeToInteger( null ) ).isNull();
+            assertThat( ForkedProcessEventObserver.decodeToInteger( "-" ) ).isNull();
         }
 
         @Test
@@ -93,18 +90,16 @@ public class ForkedChannelDecoderTest
         public void shouldHaveSystemProperty() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.sendSystemProperties( ObjectUtils.systemProps() );
 
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setSystemPropertiesListener( new PropertyEventAssertionListener() );
             LineNumberReader reader = out.newReader( UTF_8 );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
             for ( String line; ( line = reader.readLine() ) != null; )
             {
-                decoder.handleEvent( line, errorHandler );
+                decoder.handleEvent( line );
             }
-            verifyZeroInteractions( errorHandler );
             assertThat( reader.getLineNumber() ).isPositive();
         }
 
@@ -259,17 +254,15 @@ public class ForkedChannelDecoderTest
         public void shouldSendByeEvent() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.bye();
             String read = new String( out.toByteArray(), UTF_8 );
             assertThat( read )
                     .isEqualTo( ":maven-surefire-event:bye\n" );
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setByeListener( new EventAssertionListener() );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -277,19 +270,16 @@ public class ForkedChannelDecoderTest
         @Test
         public void shouldSendStopOnNextTestEvent() throws IOException
         {
-
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stopOnNextTest();
             String read = new String( out.toByteArray(), UTF_8 );
             assertThat( read )
                     .isEqualTo( ":maven-surefire-event:stop-on-next-test\n" );
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStopOnNextTestListener( new EventAssertionListener() );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -320,15 +310,14 @@ public class ForkedChannelDecoderTest
             when( reportEntry.getStackTraceWriter() ).thenReturn( stackTraceWriter );
 
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder forkedChannelEncoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder forkedChannelEncoder =
+                new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             forkedChannelEncoder.testFailed( reportEntry, true );
             String line = new String( out.toByteArray(), UTF_8 );
 
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setTestFailedListener( new ReportEventAssertionListener( reportEntry ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( line, errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( line );
         }
 
         @Test
@@ -336,17 +325,15 @@ public class ForkedChannelDecoderTest
         {
 
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.acquireNextTest();
             String read = new String( out.toByteArray(), UTF_8 );
             assertThat( read )
                     .isEqualTo( ":maven-surefire-event:next-test\n" );
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setAcquireNextTestListener( new EventAssertionListener() );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -356,15 +343,13 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.consoleInfoLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setConsoleInfoListener( new StringEventAssertionListener( "msg" ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -374,15 +359,13 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.consoleErrorLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setConsoleErrorListener( new StackTraceEventListener( "msg", null, null ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -394,16 +377,14 @@ public class ForkedChannelDecoderTest
 
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.consoleErrorLog( t );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             String stackTrace = ConsoleLoggerUtils.toString( t );
             decoder.setConsoleErrorListener( new StackTraceEventListener( "msg", null, stackTrace ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -413,16 +394,14 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             StackTraceWriter stackTraceWriter = new DeserializedStacktraceWriter( "1", "2", "3" );
             encoder.consoleErrorLog( stackTraceWriter, false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setConsoleErrorListener( new StackTraceEventListener( "1", "2", "3" ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -432,15 +411,13 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.consoleDebugLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setConsoleDebugListener( new StringEventAssertionListener( "msg" ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -450,15 +427,13 @@ public class ForkedChannelDecoderTest
         {
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.consoleWarningLog( "msg" );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setConsoleWarningListener( new StringEventAssertionListener( "msg" ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -467,15 +442,13 @@ public class ForkedChannelDecoderTest
         public void testStdOutStream() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stdOut( "msg", false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStdOutListener( new StandardOutErrEventAssertionListener( NORMAL_RUN, "msg", false ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -484,15 +457,13 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrint() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stdOut( "", false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStdOutListener( new StandardOutErrEventAssertionListener( NORMAL_RUN, "", false ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -501,15 +472,13 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrintWithNull() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stdOut( null, false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStdOutListener( new StandardOutErrEventAssertionListener( NORMAL_RUN, null, false ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -518,15 +487,13 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrintln() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stdOut( "", true );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStdOutListener( new StandardOutErrEventAssertionListener( NORMAL_RUN, "", true ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -535,15 +502,13 @@ public class ForkedChannelDecoderTest
         public void testStdOutStreamPrintlnWithNull() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stdOut( null, true );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStdOutListener( new StandardOutErrEventAssertionListener( NORMAL_RUN, null, true ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -552,15 +517,13 @@ public class ForkedChannelDecoderTest
         public void testStdErrStream() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.stdErr( "msg", false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setStdErrListener( new StandardOutErrEventAssertionListener( NORMAL_RUN, "msg", false ) );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
             assertThat( lines.readLine() )
                     .isNull();
         }
@@ -569,44 +532,36 @@ public class ForkedChannelDecoderTest
         public void shouldCountSameNumberOfSystemProperties() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             encoder.sendSystemProperties( ObjectUtils.systemProps() );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setSystemPropertiesListener( new PropertyEventAssertionListener() );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
         }
 
         @Test
         public void shouldHandleErrorAfterNullLine()
         {
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setSystemPropertiesListener( new PropertyEventAssertionListener() );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( null, errorHandler );
-            verify( errorHandler, times( 1 ) )
-                    .handledError( nullable( String.class ), nullable( Throwable.class ) );
+            decoder.handleEvent( null );
         }
 
         @Test
         public void shouldHandleErrorAfterUnknownOperation()
         {
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setSystemPropertiesListener( new PropertyEventAssertionListener() );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( ":maven-surefire-event:abnormal-run:-", errorHandler );
-            verify( errorHandler, times( 1 ) )
-                    .handledError( eq( ":maven-surefire-event:abnormal-run:-" ), nullable( Throwable.class ) );
+            decoder.handleEvent( ":maven-surefire-event:abnormal-run:-" );
         }
 
         @Test
         public void shouldHandleExit() throws IOException
         {
             Stream out = Stream.newStream();
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
             StackTraceWriter stackTraceWriter = mock( StackTraceWriter.class );
             when( stackTraceWriter.getThrowable() ).thenReturn( new SafeThrowable( "1" ) );
             when( stackTraceWriter.smartTrimmedStackTrace() ).thenReturn( "2" );
@@ -615,20 +570,18 @@ public class ForkedChannelDecoderTest
             encoder.sendExitEvent( stackTraceWriter, false );
 
             LineNumberReader lines = out.newReader( UTF_8 );
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
             decoder.setExitErrorEventListener( new ForkedProcessExitErrorListener()
             {
                 @Override
-                public void handle( String exceptionMessage, String smartTrimmedStackTrace, String stackTrace )
+                public void handle( StackTraceWriter stackTrace )
                 {
-                    assertThat( exceptionMessage ).isEqualTo( "1" );
-                    assertThat( smartTrimmedStackTrace ).isEqualTo( "2" );
-                    assertThat( stackTrace ).isEqualTo( "3" );
+                    assertThat( stackTrace.getThrowable().getMessage() ).isEqualTo( "1" );
+                    assertThat( stackTrace.smartTrimmedStackTrace() ).isEqualTo( "2" );
+                    assertThat( stackTrace.writeTraceToString() ).isEqualTo( "3" );
                 }
             } );
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( lines.readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
+            decoder.handleEvent( lines.readLine() );
         }
     }
 
@@ -714,37 +667,23 @@ public class ForkedChannelDecoderTest
 
             Stream out = Stream.newStream();
 
-            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+            LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
             LegacyMasterProcessChannelEncoder.class.getMethod( operation[0], ReportEntry.class, boolean.class )
                     .invoke( encoder, reportEntry, trim );
 
-            ForkedChannelDecoder decoder = new ForkedChannelDecoder();
+            ForkedProcessEventObserver decoder = new ForkedProcessEventObserver();
 
-            ForkedChannelDecoder.class.getMethod( operation[1], ForkedProcessReportEventListener.class )
+            ForkedProcessEventObserver.class.getMethod( operation[1], ForkedProcessReportEventListener.class )
                     .invoke( decoder, new ReportEventAssertionListener( reportEntry ) );
 
-            AssertionErrorHandler errorHandler = mock( AssertionErrorHandler.class );
-            decoder.handleEvent( out.newReader( UTF_8 ).readLine(), errorHandler );
-            verifyZeroInteractions( errorHandler );
-        }
-    }
-
-    private static class AssertionErrorHandler implements ForkedChannelDecoderErrorHandler
-    {
-        public void handledError( String line, Throwable e )
-        {
-            if ( e != null )
-            {
-                e.printStackTrace();
-            }
-            fail( line + ( e == null ? "" : "\n" + e.getLocalizedMessage() ) );
+            decoder.handleEvent( out.newReader( UTF_8 ).readLine() );
         }
     }
 
     private static class PropertyEventAssertionListener implements ForkedProcessPropertyEventListener
     {
-        private final Map sysProps = System.getProperties();
+        private final Map<?, ?> sysProps = System.getProperties();
 
         public void handle( RunMode runMode, String key, String value )
         {
@@ -791,7 +730,7 @@ public class ForkedChannelDecoderTest
         }
 
         @Override
-        public void handle( String msg, String smartStackTrace, String stackTrace )
+        public void handle( @Nonnull StackTraceWriter stackTrace )
         {
             assertThat( msg )
                     .isEqualTo( this.msg );
@@ -830,7 +769,7 @@ public class ForkedChannelDecoderTest
         }
     }
 
-    private static class ReportEventAssertionListener implements ForkedProcessReportEventListener
+    private static class ReportEventAssertionListener implements ForkedProcessReportEventListener<ReportEntry>
     {
         private final ReportEntry reportEntry;
 

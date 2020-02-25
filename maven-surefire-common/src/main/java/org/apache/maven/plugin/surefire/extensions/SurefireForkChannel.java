@@ -19,12 +19,13 @@ package org.apache.maven.plugin.surefire.extensions;
  * under the License.
  */
 
+import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
+import org.apache.maven.surefire.eventapi.Event;
 import org.apache.maven.surefire.extensions.CloseableDaemonThread;
 import org.apache.maven.surefire.extensions.CommandReader;
 import org.apache.maven.surefire.extensions.EventHandler;
 import org.apache.maven.surefire.extensions.ForkChannel;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
-import org.apache.maven.surefire.extensions.util.LineConsumerThread;
 import org.apache.maven.surefire.extensions.util.StreamFeeder;
 
 import javax.annotation.Nonnull;
@@ -62,13 +63,15 @@ final class SurefireForkChannel extends ForkChannel
 {
     private static final byte[] LOCAL_LOOPBACK_IP_ADDRESS = new byte[]{127, 0, 0, 1};
 
+    private final ConsoleLogger logger;
     private final ServerSocketChannel server;
     private final int localPort;
     private volatile SocketChannel channel;
 
-    SurefireForkChannel( int forkChannelId ) throws IOException
+    SurefireForkChannel( int forkChannelId, ConsoleLogger logger ) throws IOException
     {
         super( forkChannelId );
+        this.logger = logger;
         server = open();
         setTrueOptions( SO_REUSEADDR, TCP_NODELAY, SO_KEEPALIVE );
         InetAddress ip = Inet4Address.getByAddress( LOCAL_LOOPBACK_IP_ADDRESS );
@@ -118,13 +121,12 @@ final class SurefireForkChannel extends ForkChannel
     }
 
     @Override
-    public CloseableDaemonThread bindEventHandler( @Nonnull EventHandler eventHandler,
+    public CloseableDaemonThread bindEventHandler( @Nonnull EventHandler<Event> eventHandler,
                                                    @Nonnull CountdownCloseable countdownCloseable,
                                                    ReadableByteChannel stdOut )
     {
-        // todo develop Event and EventConsumerThread, see the algorithm in ForkedChannelDecoder#handleEvent()
-        return new LineConsumerThread( "fork-" + getForkChannelId() + "-event-thread-", channel,
-            eventHandler, countdownCloseable );
+        return new EventConsumerThread( "fork-" + getForkChannelId() + "-event-thread-", channel,
+            eventHandler, countdownCloseable, logger );
     }
 
     @Override

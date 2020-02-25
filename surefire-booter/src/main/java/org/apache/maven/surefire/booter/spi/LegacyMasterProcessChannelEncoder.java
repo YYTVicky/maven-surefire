@@ -19,50 +19,51 @@ package org.apache.maven.surefire.booter.spi;
  * under the License.
  */
 
-import org.apache.maven.surefire.booter.DumpErrorSingleton;
-import org.apache.maven.surefire.booter.ForkedProcessEvent;
-import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
-import org.apache.maven.surefire.shared.codec.binary.Base64;
 import org.apache.maven.plugin.surefire.log.api.ConsoleLoggerUtils;
+import org.apache.maven.surefire.booter.DumpErrorSingleton;
+import org.apache.maven.surefire.booter.ForkedProcessEventType;
+import org.apache.maven.surefire.providerapi.MasterProcessChannelEncoder;
 import org.apache.maven.surefire.report.ReportEntry;
 import org.apache.maven.surefire.report.RunMode;
 import org.apache.maven.surefire.report.SafeThrowable;
 import org.apache.maven.surefire.report.StackTraceWriter;
+import org.apache.maven.surefire.shared.codec.binary.Base64;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.MAGIC_NUMBER_DELIMITED;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_SYSPROPS;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDERR;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDERR_NEW_LINE;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDOUT;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STDOUT_NEW_LINE;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_BYE;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_CONSOLE_ERROR;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_CONSOLE_DEBUG;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_CONSOLE_INFO;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_CONSOLE_WARNING;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_NEXT_TEST;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_STOP_ON_NEXT_TEST;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TEST_ASSUMPTIONFAILURE;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TEST_ERROR;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TEST_FAILED;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TEST_SKIPPED;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TEST_STARTING;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TEST_SUCCEEDED;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TESTSET_COMPLETED;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_TESTSET_STARTING;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_JVM_EXIT_ERROR;
+import static java.util.Objects.requireNonNull;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_BYE;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_CONSOLE_DEBUG;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_CONSOLE_ERROR;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_CONSOLE_INFO;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_CONSOLE_WARNING;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_JVM_EXIT_ERROR;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_NEXT_TEST;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STDERR;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STDERR_NEW_LINE;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STDOUT;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STDOUT_NEW_LINE;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_STOP_ON_NEXT_TEST;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_SYSPROPS;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TESTSET_COMPLETED;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TESTSET_STARTING;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TEST_ASSUMPTIONFAILURE;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TEST_ERROR;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TEST_FAILED;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TEST_SKIPPED;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TEST_STARTING;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TEST_SUCCEEDED;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.MAGIC_NUMBER;
 import static org.apache.maven.surefire.report.RunMode.NORMAL_RUN;
 import static org.apache.maven.surefire.report.RunMode.RERUN_TEST_AFTER_FAILURE;
-import static java.util.Objects.requireNonNull;
 
 /**
  * magic number : opcode : run mode [: opcode specific data]*
@@ -73,20 +74,21 @@ import static java.util.Objects.requireNonNull;
  */
 public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEncoder
 {
+    static final String MAGIC_NUMBER_DELIMITED = ':' + MAGIC_NUMBER + ':';
     private static final Base64 BASE64 = new Base64();
     private static final Charset STREAM_ENCODING = US_ASCII;
     private static final Charset STRING_ENCODING = UTF_8;
 
-    protected final OutputStream out;
+    protected final WritableByteChannel out;
     private final RunMode runMode;
     private volatile boolean trouble;
 
-    public LegacyMasterProcessChannelEncoder( @Nonnull OutputStream out )
+    public LegacyMasterProcessChannelEncoder( @Nonnull WritableByteChannel out )
     {
         this( out, NORMAL_RUN );
     }
 
-    protected LegacyMasterProcessChannelEncoder( @Nonnull OutputStream out, @Nonnull RunMode runMode )
+    protected LegacyMasterProcessChannelEncoder( @Nonnull WritableByteChannel out, @Nonnull RunMode runMode )
     {
         this.out = requireNonNull( out );
         this.runMode = requireNonNull( runMode );
@@ -173,14 +175,14 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
     @Override
     public void stdOut( String msg, boolean newLine )
     {
-        ForkedProcessEvent event = newLine ? BOOTERCODE_STDOUT_NEW_LINE : BOOTERCODE_STDOUT;
+        ForkedProcessEventType event = newLine ? BOOTERCODE_STDOUT_NEW_LINE : BOOTERCODE_STDOUT;
         setOutErr( event.getOpcode(), msg );
     }
 
     @Override
     public void stdErr( String msg, boolean newLine )
     {
-        ForkedProcessEvent event = newLine ? BOOTERCODE_STDERR_NEW_LINE : BOOTERCODE_STDERR;
+        ForkedProcessEventType event = newLine ? BOOTERCODE_STDERR_NEW_LINE : BOOTERCODE_STDERR;
         setOutErr( event.getOpcode(), msg );
     }
 
@@ -263,21 +265,21 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
         error( stackTraceWriter, trimStackTraces, BOOTERCODE_JVM_EXIT_ERROR );
     }
 
-    private void error( StackTraceWriter stackTraceWriter, boolean trimStackTraces, ForkedProcessEvent event )
+    private void error( StackTraceWriter stackTraceWriter, boolean trimStackTraces, ForkedProcessEventType event )
     {
         StringBuilder encoded = encodeHeader( event.getOpcode(), null );
         encode( encoded, stackTraceWriter, trimStackTraces );
         encodeAndPrintEvent( encoded );
     }
 
-    private void encode( ForkedProcessEvent operation, RunMode runMode, ReportEntry reportEntry,
+    private void encode( ForkedProcessEventType operation, RunMode runMode, ReportEntry reportEntry,
                          boolean trimStackTraces )
     {
         StringBuilder event = encode( operation.getOpcode(), runMode.geRunName(), reportEntry, trimStackTraces );
         encodeAndPrintEvent( event );
     }
 
-    private void encodeOpcode( ForkedProcessEvent operation )
+    private void encodeOpcode( ForkedProcessEventType operation )
     {
         StringBuilder event = encodeOpcode( operation.getOpcode(), null );
         encodeAndPrintEvent( event );
@@ -290,8 +292,7 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
         {
             try
             {
-                out.write( array );
-                out.flush();
+                out.write( ByteBuffer.wrap( array ) );
             }
             catch ( IOException e )
             {
@@ -301,7 +302,7 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
         }
     }
 
-    static StringBuilder encode( ForkedProcessEvent operation, RunMode runMode, String... args )
+    static StringBuilder encode( ForkedProcessEventType operation, RunMode runMode, String... args )
     {
         StringBuilder encodedTo = encodeHeader( operation.getOpcode(), runMode.geRunName() )
                                           .append( ':' );
@@ -340,18 +341,17 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
     /**
      * Used operations:<br>
      * <ul>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TESTSET_STARTING},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TESTSET_COMPLETED},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TEST_STARTING},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TEST_SUCCEEDED},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TEST_FAILED},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TEST_ERROR},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TEST_SKIPPED},</li>
-     * <li>{@link ForkedProcessEvent#BOOTERCODE_TEST_ASSUMPTIONFAILURE}.</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TESTSET_STARTING},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TESTSET_COMPLETED},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TEST_STARTING},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TEST_SUCCEEDED},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TEST_FAILED},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TEST_ERROR},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TEST_SKIPPED},</li>
+     * <li>{@link ForkedProcessEventType#BOOTERCODE_TEST_ASSUMPTIONFAILURE}.</li>
      * </ul>
      */
-    static StringBuilder encode( String operation, String runMode, ReportEntry reportEntry,
-                                         boolean trimStackTraces )
+    static StringBuilder encode( String operation, String runMode, ReportEntry reportEntry, boolean trimStackTraces )
     {
         StringBuilder encodedTo = encodeHeader( operation, runMode )
                 .append( ':' )
@@ -409,7 +409,7 @@ public class LegacyMasterProcessChannelEncoder implements MasterProcessChannelEn
     }
 
     /**
-     * Used in {@link #bye()}, {@link #stopOnNextTest()} and {@link #encodeOpcode(ForkedProcessEvent)}
+     * Used in {@link #bye()}, {@link #stopOnNextTest()} and {@link #encodeOpcode(ForkedProcessEventType)}
      * and private methods extending the buffer.
      *
      * @param operation opcode

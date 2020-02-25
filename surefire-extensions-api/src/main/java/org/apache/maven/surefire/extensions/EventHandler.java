@@ -22,11 +22,11 @@ package org.apache.maven.surefire.extensions;
 import javax.annotation.Nonnull;
 
 /**
+ * Handler of events.
  *
+ * @param <T> generic type of the event object
  */
-public interface EventHandler
+public interface EventHandler<T>
 {
-    // todo here should be Event object as POJO which separates physical stream representation from the independent
-    // todo Event parser in ForkClient. So the parser should be part of ForkChannel implementation.
-    void handleEvent( @Nonnull String event );
+    void handleEvent( @Nonnull T event );
 }

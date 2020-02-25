@@ -19,6 +19,7 @@ package org.apache.maven.plugin.surefire.extensions;
  * under the License.
  */
 
+import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
 import org.apache.maven.surefire.extensions.ForkChannel;
 import org.apache.maven.surefire.extensions.ForkNodeFactory;
 
@@ -32,8 +33,8 @@ public class LegacyForkNodeFactory implements ForkNodeFactory
 {
     @Nonnull
     @Override
-    public ForkChannel createForkChannel( @Nonnegative int forkChannelId )
+    public ForkChannel createForkChannel( @Nonnegative int forkChannelId, ConsoleLogger logger )
     {
-        return new LegacyForkChannel( forkChannelId );
+        return new LegacyForkChannel( forkChannelId, logger );
     }
 }

@@ -1,4 +1,4 @@
-package org.apache.maven.plugin.surefire.extensions;
+package org.apache.maven.surefire.eventapi;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,23 +19,20 @@ package org.apache.maven.plugin.surefire.extensions;
  * under the License.
  */
 
-import org.apache.maven.plugin.surefire.log.api.ConsoleLogger;
-import org.apache.maven.surefire.extensions.ForkChannel;
-import org.apache.maven.surefire.extensions.ForkNodeFactory;
+import org.apache.maven.surefire.report.ReportEntry;
+import org.apache.maven.surefire.report.RunMode;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_TESTSET_STARTING;
 
 /**
- * The factory of {@link SurefireForkChannel}.
+ * The event for started testset.
+ *
+ * @since 3.0.0-M5
  */
-public class SurefireForkNodeFactory implements ForkNodeFactory
+public final class TestsetStartingEvent extends AbstractTestControlEvent
 {
-    @Nonnull
-    @Override
-    public ForkChannel createForkChannel( @Nonnegative int forkChannelId, ConsoleLogger logger ) throws IOException
+    public TestsetStartingEvent( RunMode runMode, ReportEntry reportEntry )
     {
-        return new SurefireForkChannel( forkChannelId, logger );
+        super( BOOTERCODE_TESTSET_STARTING, runMode, reportEntry );
     }
 }

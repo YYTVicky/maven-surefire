@@ -34,15 +34,17 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 
+import static java.nio.channels.Channels.newChannel;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.copyOfRange;
-import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.encode;
+import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.MAGIC_NUMBER_DELIMITED;
+import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.toBase64;
 import static org.apache.maven.surefire.shared.codec.binary.Base64.encodeBase64String;
+import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.encode;
 import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.encodeHeader;
 import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.encodeMessage;
 import static org.apache.maven.surefire.booter.spi.LegacyMasterProcessChannelEncoder.encodeOpcode;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.BOOTERCODE_SYSPROPS;
-import static org.apache.maven.surefire.booter.ForkedProcessEvent.MAGIC_NUMBER_DELIMITED;
+import static org.apache.maven.surefire.booter.ForkedProcessEventType.BOOTERCODE_SYSPROPS;
 import static org.apache.maven.surefire.report.RunMode.NORMAL_RUN;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -61,8 +63,8 @@ public class LegacyMasterProcessChannelEncoderTest
     @Test
     public void shouldBeFailSafe()
     {
-        assertThat( LegacyMasterProcessChannelEncoder.toBase64( null ) ).isEqualTo( "-" );
-        assertThat( LegacyMasterProcessChannelEncoder.toBase64( "" ) ).isEqualTo( "" );
+        assertThat( toBase64( null ) ).isEqualTo( "-" );
+        assertThat( toBase64( "" ) ).isEqualTo( "" );
     }
 
     @Test
@@ -229,7 +231,7 @@ public class LegacyMasterProcessChannelEncoderTest
                 );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testSetStarting( reportEntry, true );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -259,7 +261,7 @@ public class LegacyMasterProcessChannelEncoderTest
         assertThat( printedLines.readLine() ).isNull();
 
         out = Stream.newStream();
-        encoder = new LegacyMasterProcessChannelEncoder( out );
+        encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testSetStarting( reportEntry, false );
         printedLines = out.newReader( UTF_8 );
@@ -326,7 +328,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testSetCompleted( reportEntry, false );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -393,7 +395,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testStarting( reportEntry, true );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -460,7 +462,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testSucceeded( reportEntry, true );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -527,7 +529,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testFailed( reportEntry, false );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -593,7 +595,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testSkipped( reportEntry, false );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -658,7 +660,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testError( reportEntry, false );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -721,7 +723,7 @@ public class LegacyMasterProcessChannelEncoderTest
         String encodedMessage = encodeBase64String( toArray( UTF_8.encode( reportEntry.getMessage() ) ) );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.testAssumptionFailure( reportEntry, false );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -755,7 +757,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testBye() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.bye();
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -768,7 +770,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testStopOnNextTest() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.stopOnNextTest();
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -781,7 +783,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testAcquireNextTest() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.acquireNextTest();
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -806,7 +808,7 @@ public class LegacyMasterProcessChannelEncoderTest
                 .isEqualTo( ":maven-surefire-event:some-opcode:normal-run:UTF-8:msg" );
 
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
         encoded = encoder.print( "some-opcode", "msg" );
         assertThat( encoded.toString() )
                 .isEqualTo( ":maven-surefire-event:some-opcode:UTF-8:bXNn" );
@@ -820,7 +822,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleInfo()
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.consoleInfoLog( "msg" );
 
@@ -838,7 +840,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleError()
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.consoleErrorLog( "msg" );
 
@@ -856,7 +858,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleErrorLog1() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.consoleErrorLog( new Exception( "msg" ) );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -869,7 +871,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleErrorLog2() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.consoleErrorLog( "msg2", new Exception( "msg" ) );
         LineNumberReader printedLines = out.newReader( UTF_8 );
@@ -882,7 +884,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleErrorLog3() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         StackTraceWriter stackTraceWriter = mock( StackTraceWriter.class );
         when( stackTraceWriter.getThrowable() ).thenReturn( new SafeThrowable( "1" ) );
@@ -901,7 +903,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleDebug()
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.consoleDebugLog( "msg" );
 
@@ -919,7 +921,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testConsoleWarning()
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.consoleWarningLog( "msg" );
 
@@ -937,7 +939,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testStdOutStream() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.stdOut( "msg", false );
 
@@ -954,7 +956,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testStdOutStreamLn() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.stdOut( "msg", true );
 
@@ -971,7 +973,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testStdErrStream() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.stdErr( "msg", false );
 
@@ -988,7 +990,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void testStdErrStreamLn() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         encoder.stdErr( "msg", true );
 
@@ -1006,7 +1008,7 @@ public class LegacyMasterProcessChannelEncoderTest
     public void shouldCountSameNumberOfSystemProperties() throws IOException
     {
         Stream out = Stream.newStream();
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
 
         Map<String, String> sysProps = ObjectUtils.systemProps();
         int expectedSize = sysProps.size();
@@ -1030,7 +1032,7 @@ public class LegacyMasterProcessChannelEncoderTest
     {
         Stream out = Stream.newStream();
 
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
         StackTraceWriter stackTraceWriter = mock( StackTraceWriter.class );
         when( stackTraceWriter.getThrowable() ).thenReturn( new SafeThrowable( "1" ) );
         when( stackTraceWriter.smartTrimmedStackTrace() ).thenReturn( "2" );
@@ -1048,7 +1050,7 @@ public class LegacyMasterProcessChannelEncoderTest
     {
         Stream out = Stream.newStream();
 
-        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( out );
+        LegacyMasterProcessChannelEncoder encoder = new LegacyMasterProcessChannelEncoder( newChannel( out ) );
         StackTraceWriter stackTraceWriter = mock( StackTraceWriter.class );
         when( stackTraceWriter.getThrowable() ).thenReturn( new SafeThrowable( "1" ) );
         when( stackTraceWriter.smartTrimmedStackTrace() ).thenReturn( "2" );

@@ -19,6 +19,7 @@ package org.apache.maven.surefire.booter;
  * under the License.
  */
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +31,7 @@ import static java.util.Collections.unmodifiableMap;
  * @author <a href="mailto:tibordigana@apache.org">Tibor Digana (tibor17)</a>
  * @since 3.0.0-M4
  */
-public enum ForkedProcessEvent
+public enum ForkedProcessEventType
 {
     BOOTERCODE_SYSPROPS( "sys-prop" ),
 
@@ -61,14 +62,12 @@ public enum ForkedProcessEvent
 
     public static final String MAGIC_NUMBER = "maven-surefire-event";
 
-    public static final String MAGIC_NUMBER_DELIMITED = ':' + MAGIC_NUMBER + ':';
+    private static final Map<String, ForkedProcessEventType> EVENTS = events();
 
-    public static final Map<String, ForkedProcessEvent> EVENTS = events();
-
-    private static Map<String, ForkedProcessEvent> events()
+    private static Map<String, ForkedProcessEventType> events()
     {
-        Map<String, ForkedProcessEvent> events = new ConcurrentHashMap<>();
-        for ( ForkedProcessEvent event : values() )
+        Map<String, ForkedProcessEventType> events = new ConcurrentHashMap<>();
+        for ( ForkedProcessEventType event : values() )
         {
             events.put( event.getOpcode(), event );
         }
@@ -77,7 +76,7 @@ public enum ForkedProcessEvent
 
     private final String opcode;
 
-    ForkedProcessEvent( String opcode )
+    ForkedProcessEventType( String opcode )
     {
         this.opcode = opcode;
     }
@@ -130,5 +129,10 @@ public enum ForkedProcessEvent
     public boolean isJvmExitError()
     {
         return this == BOOTERCODE_JVM_EXIT_ERROR;
+    }
+
+    public static ForkedProcessEventType byOpcode( @Nonnull String opcode )
+    {
+        return EVENTS.get( opcode );
     }
 }

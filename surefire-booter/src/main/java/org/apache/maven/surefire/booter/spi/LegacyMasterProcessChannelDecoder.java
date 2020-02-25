@@ -20,13 +20,15 @@ package org.apache.maven.surefire.booter.spi;
  */
 
 import org.apache.maven.surefire.booter.Command;
+import org.apache.maven.surefire.booter.DumpErrorSingleton;
 import org.apache.maven.surefire.booter.MasterProcessCommand;
 import org.apache.maven.surefire.providerapi.MasterProcessChannelDecoder;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,11 +43,11 @@ import static org.apache.maven.surefire.booter.MasterProcessCommand.MAGIC_NUMBER
  */
 public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDecoder
 {
-    private final InputStream is;
+    private final ReadableByteChannel channel;
 
-    public LegacyMasterProcessChannelDecoder( @Nonnull InputStream is )
+    public LegacyMasterProcessChannelDecoder( @Nonnull ReadableByteChannel channel )
     {
-        this.is = is;
+        this.channel = channel;
     }
 
     @Override
@@ -55,6 +57,7 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
     {
         List<String> tokens = new ArrayList<>( 3 );
         StringBuilder token = new StringBuilder( MAGIC_NUMBER.length() );
+        ByteBuffer buffer = ByteBuffer.allocate( 1 );
 
         start:
         do
@@ -62,10 +65,13 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
             boolean endOfStream;
             tokens.clear();
             token.setLength( 0 );
-            boolean frameStarted = false;
-            for ( int r; !( endOfStream = ( r = is.read() ) == -1 ) ; )
+            FrameCompletion completion = null;
+            for ( boolean frameStarted = false; !( endOfStream = channel.read( buffer ) == -1 ) ; completion = null )
             {
-                char c = (char) r;
+                buffer.flip();
+                char c = (char) buffer.get();
+                buffer.clear();
+
                 if ( !frameStarted )
                 {
                     if ( c == ':' )
@@ -81,13 +87,15 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
                     {
                         tokens.add( token.toString() );
                         token.setLength( 0 );
-                        FrameCompletion completion = frameCompleteness( tokens );
+                        completion = frameCompleteness( tokens );
                         if ( completion == FrameCompletion.COMPLETE )
                         {
                             break;
                         }
                         else if ( completion == FrameCompletion.MALFORMED )
                         {
+                            DumpErrorSingleton.getSingleton()
+                                .dumpStreamText( "Malformed frame with tokens " + tokens );
                             continue start;
                         }
                     }
@@ -98,7 +106,7 @@ public class LegacyMasterProcessChannelDecoder implements MasterProcessChannelDe
                 }
             }
 
-            if ( frameCompleteness( tokens ) == FrameCompletion.COMPLETE )
+            if ( completion == FrameCompletion.COMPLETE )
             {
                 MasterProcessCommand cmd = MasterProcessCommand.byOpcode( tokens.get( 1 ) );
                 if ( tokens.size() == 2 )

@@ -19,6 +19,7 @@ package org.apache.maven.surefire.extensions;
  * under the License.
  */
 
+import org.apache.maven.surefire.eventapi.Event;
 import org.apache.maven.surefire.extensions.util.CountdownCloseable;
 
 import javax.annotation.Nonnull;
@@ -90,7 +91,7 @@ public abstract class ForkChannel implements Closeable
      * @return the thread instance to start up in order to stream out the data
      * @throws IOException if an error in the fork channel
      */
-    public abstract CloseableDaemonThread bindEventHandler( @Nonnull EventHandler eventHandler,
+    public abstract CloseableDaemonThread bindEventHandler( @Nonnull EventHandler<Event> eventHandler,
                                                             @Nonnull CountdownCloseable countdownCloseable,
                                                             ReadableByteChannel stdOut )
         throws IOException;

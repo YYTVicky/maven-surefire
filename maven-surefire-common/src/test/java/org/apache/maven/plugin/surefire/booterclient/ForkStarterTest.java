@@ -57,7 +57,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.Manifest;
 import java.util.zip.Deflater;
 
@@ -176,7 +175,7 @@ public class ForkStarterTest
         TestProvidingInputStream testProvidingInputStream = new TestProvidingInputStream( new ArrayDeque<String>() );
         invokeMethod( forkStarter, "fork", types, null,
             new PropertiesWrapper( Collections.<String, String>emptyMap() ),
-            new ForkClient( reporterFactory, null, logger, new AtomicBoolean(), 1 ),
+            new ForkClient( reporterFactory, null, 1 ),
             new SurefireProperties(), 1, testProvidingInputStream, new LegacyForkNodeFactory(), true );
         testProvidingInputStream.close();
     }
@@ -230,7 +229,7 @@ public class ForkStarterTest
         TestLessInputStream testLessInputStream = new TestLessInputStreamBuilder().build();
         invokeMethod( forkStarter, "fork", types, null,
             new PropertiesWrapper( Collections.<String, String>emptyMap() ),
-            new ForkClient( reporterFactory, testLessInputStream, logger, new AtomicBoolean(), 1 ),
+            new ForkClient( reporterFactory, testLessInputStream, 1 ),
             new SurefireProperties(), 1, testLessInputStream, new LegacyForkNodeFactory(), true );
         testLessInputStream.close();
     }
